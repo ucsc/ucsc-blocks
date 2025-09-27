@@ -1,0 +1,1144 @@
+<?xml version="1.0"?>
+<artefact xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="artefact.xsd" name="UCSC Events" slug="ucsc-events" type="code-package" schemaVersion="2">
+  <file path="readme.txt">
+    <content><![CDATA[
+=== UCSC Events ===
+
+Contributors:      WordPress Telex
+Tags:              block, events, api, external content
+Tested up to:      6.8
+Stable tag:        0.1.0
+License:           GPLv2 or later
+License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+
+Fetch and display events from external WordPress sites with customizable layouts and caching.
+
+== Description ==
+
+The UCSC Events block allows you to fetch and display event data from external WordPress sites using their REST API. This powerful block provides:
+
+* **External API Integration**: Connect to any WordPress site's REST API to fetch event data
+* **Customizable Display**: Control the number of events shown and choose from different layout styles
+* **Smart Caching**: Built-in WordPress transient caching for improved performance
+* **Cache Management**: Easy-to-use cache clearing functionality right in the block settings
+* **Rich Content Display**: Shows event titles, teasers, and featured images
+* **Responsive Layouts**: Multiple layout options that work great on all devices
+
+Perfect for universities, organizations, or any website that needs to display events from multiple WordPress sites in a unified, attractive format.
+
+== Installation ==
+
+1. Upload the plugin files to the `/wp-content/plugins/ucsc-events` directory, or install the plugin through the WordPress plugins screen directly.
+2. Activate the plugin through the 'Plugins' screen in WordPress
+3. Add the UCSC Events block to any post or page
+4. Configure the API URL, number of items, and layout style in the block settings
+
+== Frequently Asked Questions ==
+
+= What API endpoints does this block support? =
+
+This block works with standard WordPress REST API endpoints, specifically endpoints that return post data with title, excerpt, and featured image information.
+
+= How does the caching work? =
+
+The block uses WordPress transients to cache API responses for 15 minutes by default. This reduces API calls and improves page load times. You can clear the cache manually using the "Clear Cache" button in the block settings.
+
+= What layout styles are available? =
+
+The block includes multiple layout styles including list, grid, and card layouts. Each style is fully responsive and can be customized with CSS.
+
+= Can I use this with non-WordPress APIs? =
+
+This block is specifically designed for WordPress REST API endpoints. For other APIs, you would need to modify the code to handle different response formats.
+
+== Screenshots ==
+
+1. Block settings panel showing API URL input, item count selector, and layout options
+2. Grid layout displaying events with featured images, titles, and teasers
+3. List layout showing events in a clean, organized format
+4. Cache management controls in the block toolbar
+
+== Changelog ==
+
+= 0.1.0 =
+* Initial release
+* API URL input field
+* Configurable number of items to display
+* Multiple layout style options
+* WordPress transient caching
+* Cache clearing functionality
+* Responsive design support
+
+== Upgrade Notice ==
+
+= 0.1.0 =
+Initial release of UCSC Events block.
+]]></content>
+  </file>
+  <file path="ucsc-events.php">
+    <content><![CDATA[<?php
+/**
+ * Plugin Name:       UCSC Events
+ * Description:       Fetch and display events from external WordPress sites with customizable layouts and caching.
+ * Version:           0.1.0
+ * Requires at least: 6.1
+ * Requires PHP:      7.0
+ * Author:            WordPress Telex
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       ucsc-events
+ *
+ * @package UcscEvents
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+/**
+ * Registers the block using the metadata loaded from the `block.json` file.
+ * Behind the scenes, it registers also all assets so they can be enqueued
+ * through the block editor in the corresponding context.
+ *
+ * @see https://developer.wordpress.org/reference/functions/register_block_type/
+ */
+function ucsc_events_ucsc_events_block_init() {
+	register_block_type( __DIR__ . '/build/' );
+}
+add_action( 'init', 'ucsc_events_ucsc_events_block_init' );
+
+/**
+ * Enqueue scripts for the block editor
+ */
+function ucsc_events_enqueue_block_editor_assets() {
+	wp_localize_script(
+		'telex-ucsc-events-editor-script',
+		'ucscEventsData',
+		array(
+			'nonce' => wp_create_nonce('ucsc_events_nonce'),
+			'ajaxUrl' => admin_url('admin-ajax.php')
+		)
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'ucsc_events_enqueue_block_editor_assets' );
+
+/**
+ * Add nonce to frontend
+ */
+function ucsc_events_enqueue_frontend_assets() {
+	if (has_block('telex/ucsc-events')) {
+		wp_add_inline_script(
+			'wp-block-telex-ucsc-events-view-script',
+			'window.ucscEventsNonce = ' . json_encode(wp_create_nonce('ucsc_events_nonce')) . ';\n' .
+			'window.ajaxurl = ' . json_encode(admin_url('admin-ajax.php')) . ';',
+			'before'
+		);
+	}
+}
+add_action( 'wp_enqueue_scripts', 'ucsc_events_enqueue_frontend_assets' );
+
+/**
+ * Handle cache clearing AJAX request
+ */
+function ucsc_events_clear_cache() {
+	// Verify nonce for security
+	if ( ! isset($_POST['nonce']) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_events_nonce' ) ) {
+		wp_send_json_error( array( 'message' => 'Security check failed' ) );
+		return;
+	}
+
+	// Check user permissions
+	if ( ! current_user_can( 'edit_posts' ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		return;
+	}
+
+	$api_url = isset($_POST['api_url']) ? sanitize_url( $_POST['api_url'] ) : '';
+	
+	if ( ! empty( $api_url ) ) {
+		// Clear cache for different item counts
+		for ( $i = 1; $i <= 20; $i++ ) {
+			$cache_key = 'ucsc_events_' . md5( $api_url . $i );
+			delete_transient( $cache_key );
+		}
+		
+		wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
+	} else {
+		wp_send_json_error( array( 'message' => 'Invalid API URL' ) );
+	}
+}
+add_action( 'wp_ajax_ucsc_events_clear_cache', 'ucsc_events_clear_cache' );
+
+/**
+ * Fetch events data from external API
+ */
+if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
+	function ucsc_events_fetch_data( $api_url, $per_page = 5 ) {
+		if ( empty( $api_url ) ) {
+			return array();
+		}
+
+		// Create cache key based on URL and per_page
+		$cache_key = 'ucsc_events_' . md5( $api_url . $per_page );
+		
+		// Try to get cached data first
+		$cached_data = get_transient( $cache_key );
+		if ( false !== $cached_data ) {
+			return $cached_data;
+		}
+
+		// Validate URL
+		if ( ! filter_var( $api_url, FILTER_VALIDATE_URL ) ) {
+			return array();
+		}
+
+		// Prepare API URL with per_page parameter
+		$full_url = add_query_arg( array(
+			'per_page' => absint( $per_page ),
+			'_embed' => '1'
+		), $api_url );
+
+		// Fetch data from API
+		$response = wp_remote_get( $full_url, array(
+			'timeout' => 15,
+			'headers' => array(
+				'User-Agent' => 'UCSC Events Block/1.0',
+				'Accept' => 'application/json'
+			),
+			'sslverify' => true
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			// Log error for debugging
+			error_log( 'UCSC Events API Error: ' . $response->get_error_message() );
+			return array();
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( $response_code !== 200 ) {
+			error_log( 'UCSC Events API Error: HTTP ' . $response_code );
+			return array();
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( ! is_array( $data ) ) {
+			error_log( 'UCSC Events API Error: Invalid JSON response' );
+			return array();
+		}
+
+		// Process and clean the data
+		$events = array();
+		foreach ( $data as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$featured_image = '';
+			
+			// Try to get featured image from _embedded data
+			if ( isset( $item['_embedded']['wp:featuredmedia'][0]['source_url'] ) ) {
+				$featured_image = $item['_embedded']['wp:featuredmedia'][0]['source_url'];
+			} elseif ( isset( $item['_embedded']['wp:featuredmedia'][0]['media_details']['sizes']['medium']['source_url'] ) ) {
+				$featured_image = $item['_embedded']['wp:featuredmedia'][0]['media_details']['sizes']['medium']['source_url'];
+			}
+
+			$events[] = array(
+				'title' => isset( $item['title']['rendered'] ) ? $item['title']['rendered'] : 'Untitled',
+				'excerpt' => isset( $item['excerpt']['rendered'] ) ? $item['excerpt']['rendered'] : '',
+				'featured_image' => $featured_image,
+				'link' => isset( $item['link'] ) ? $item['link'] : ''
+			);
+		}
+
+		// Cache the processed data for 15 minutes
+		set_transient( $cache_key, $events, 15 * MINUTE_IN_SECONDS );
+
+		return $events;
+	}
+}]]></content>
+  </file>
+  <file path="src/block.json">
+    <content><![CDATA[
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "telex/ucsc-events",
+	"version": "0.1.0",
+	"title": "UCSC Events",
+	"category": "widgets",
+	"icon": "calendar-alt",
+	"description": "Fetch and display events from external WordPress sites with customizable layouts and caching.",
+	"example": {
+		"attributes": {
+			"apiUrl": "https://example.com/wp-json/wp/v2/posts",
+			"itemCount": 3,
+			"layoutStyle": "grid"
+		}
+	},
+	"attributes": {
+		"apiUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"itemCount": {
+			"type": "number",
+			"default": 5
+		},
+		"layoutStyle": {
+			"type": "string",
+			"default": "list"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"textdomain": "ucsc-events",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
+}
+]]></content>
+  </file>
+  <file path="src/index.js">
+    <content><![CDATA[
+/**
+ * Registers a new block provided a unique name and an object defining its behavior.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-registration/
+ */
+import { registerBlockType } from '@wordpress/blocks';
+
+/**
+ * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
+ * All files containing `style` keyword are bundled together. The code used
+ * gets applied both to the front of your site and to the editor.
+ *
+ * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
+ */
+import './style.scss';
+
+/**
+ * Internal dependencies
+ */
+import Edit from './edit';
+import metadata from './block.json';
+
+/**
+ * Every block starts by registering a new block type definition.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-registration/
+ */
+registerBlockType( metadata.name, {
+	/**
+	 * @see ./edit.js
+	 */
+	edit: Edit,
+} );
+]]></content>
+  </file>
+  <file path="src/edit.js">
+    <content><![CDATA[/**
+ * Retrieves the translation of text.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-i18n/
+ */
+import { __ } from '@wordpress/i18n';
+
+/**
+ * React hook that is used to mark the block wrapper element.
+ * It provides all the necessary props like the class name.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
+ */
+import { useBlockProps, InspectorControls, BlockControls } from '@wordpress/block-editor';
+
+/**
+ * WordPress dependencies
+ */
+import { 
+	PanelBody, 
+	TextControl, 
+	RangeControl, 
+	SelectControl, 
+	Button,
+	Notice,
+	ToolbarGroup,
+	ToolbarButton,
+	Spinner
+} from '@wordpress/components';
+import { useState, useEffect } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+
+/**
+ * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
+ * Those files can contain any CSS code that gets applied to the editor.
+ *
+ * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
+ */
+import './editor.scss';
+
+/**
+ * The edit function describes the structure of your block in the context of the
+ * editor. This represents what the editor will render when the block is used.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#edit
+ *
+ * @param {Object} props               Properties passed to the function.
+ * @param {Object} props.attributes    Available block attributes.
+ * @param {Function} props.setAttributes Function that updates individual attributes.
+ *
+ * @return {Element} Element to render.
+ */
+export default function Edit( { attributes, setAttributes } ) {
+	const { apiUrl, itemCount, layoutStyle } = attributes;
+	const [previewData, setPreviewData] = useState([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState('');
+	const [cacheCleared, setCacheCleared] = useState(false);
+
+	const blockProps = useBlockProps({
+		className: `layout-${layoutStyle}`
+	});
+
+	const layoutOptions = [
+		{ label: __('List', 'ucsc-events'), value: 'list' },
+		{ label: __('Grid', 'ucsc-events'), value: 'grid' },
+		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
+	];
+
+	// Fetch preview data when API URL or item count changes
+	useEffect(() => {
+		if (apiUrl) {
+			fetchPreviewData();
+		} else {
+			setPreviewData([]);
+			setError('');
+		}
+	}, [apiUrl, itemCount]);
+
+	const fetchPreviewData = async () => {
+		if (!apiUrl) return;
+
+		setIsLoading(true);
+		setError('');
+
+		try {
+			// Basic URL validation
+			let url;
+			try {
+				url = new URL(apiUrl);
+			} catch {
+				throw new Error(__('Please enter a valid URL', 'ucsc-events'));
+			}
+
+			url.searchParams.set('per_page', itemCount);
+			url.searchParams.set('_embed', '1');
+
+			const response = await fetch(url.toString(), {
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				signal: AbortSignal.timeout(15000) // 15 second timeout
+			});
+			
+			if (!response.ok) {
+				if (response.status === 404) {
+					throw new Error(__('API endpoint not found. Please check the URL.', 'ucsc-events'));
+				} else if (response.status === 403) {
+					throw new Error(__('Access denied to the API endpoint.', 'ucsc-events'));
+				} else {
+					throw new Error(__('Failed to fetch data from API. Status: ' + response.status, 'ucsc-events'));
+				}
+			}
+
+			const data = await response.json();
+			
+			if (!Array.isArray(data)) {
+				throw new Error(__('Invalid API response format. Expected an array of posts.', 'ucsc-events'));
+			}
+
+			if (data.length === 0) {
+				setPreviewData([]);
+				return;
+			}
+
+			const processedData = data.map(item => ({
+				title: item.title?.rendered || __('Untitled', 'ucsc-events'),
+				excerpt: item.excerpt?.rendered || '',
+				featured_image: item._embedded?.['wp:featuredmedia']?.[0]?.source_url || '',
+				link: item.link || ''
+			}));
+
+			setPreviewData(processedData);
+		} catch (err) {
+			if (err.name === 'AbortError') {
+				setError(__('Request timeout. Please try again.', 'ucsc-events'));
+			} else {
+				setError(err.message);
+			}
+			setPreviewData([]);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const clearCache = async () => {
+		if (!apiUrl) return;
+
+		setIsLoading(true);
+		
+		try {
+			const formData = new FormData();
+			formData.append('action', 'ucsc_events_clear_cache');
+			formData.append('api_url', apiUrl);
+			formData.append('nonce', window.ucscEventsNonce || '');
+
+			const response = await fetch(ajaxurl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+			
+			if (result.success) {
+				setCacheCleared(true);
+				setTimeout(() => setCacheCleared(false), 3000);
+				// Refetch data after clearing cache
+				fetchPreviewData();
+			} else {
+				throw new Error(result.data?.message || __('Failed to clear cache', 'ucsc-events'));
+			}
+		} catch (err) {
+			setError(err.message);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const stripHTMLTags = (html) => {
+		const tmp = document.createElement('div');
+		tmp.innerHTML = html;
+		return tmp.textContent || tmp.innerText || '';
+	};
+
+	const renderEventItem = (event, index) => (
+		<div key={index} className="ucsc-event-item">
+			{event.featured_image && (
+				<div className="ucsc-event-image">
+					<img 
+						src={event.featured_image} 
+						alt="" 
+						onError={(e) => {
+							e.target.style.display = 'none';
+						}}
+					/>
+				</div>
+			)}
+			<div className="ucsc-event-content">
+				<h3 className="ucsc-event-title">
+					{stripHTMLTags(event.title)}
+				</h3>
+				{event.excerpt && (
+					<div className="ucsc-event-excerpt">
+						{stripHTMLTags(event.excerpt)}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+
+	return (
+		<>
+			<BlockControls>
+				<ToolbarGroup>
+					<ToolbarButton
+						icon="update"
+						label={__('Clear Cache', 'ucsc-events')}
+						onClick={clearCache}
+						disabled={!apiUrl || isLoading}
+					/>
+				</ToolbarGroup>
+			</BlockControls>
+
+			<InspectorControls>
+				<PanelBody title={__('Event Settings', 'ucsc-events')} initialOpen={true}>
+					<TextControl
+						label={__('API URL', 'ucsc-events')}
+						value={apiUrl}
+						onChange={(value) => setAttributes({ apiUrl: value.trim() })}
+						help={__('Enter the WordPress REST API URL (e.g., https://example.com/wp-json/wp/v2/posts)', 'ucsc-events')}
+						placeholder="https://example.com/wp-json/wp/v2/posts"
+					/>
+
+					<RangeControl
+						label={__('Number of Events', 'ucsc-events')}
+						value={itemCount}
+						onChange={(value) => setAttributes({ itemCount: value })}
+						min={1}
+						max={20}
+						help={__('Maximum number of events to display', 'ucsc-events')}
+					/>
+
+					<SelectControl
+						label={__('Layout Style', 'ucsc-events')}
+						value={layoutStyle}
+						options={layoutOptions}
+						onChange={(value) => setAttributes({ layoutStyle: value })}
+						help={__('Choose how events should be displayed', 'ucsc-events')}
+					/>
+
+					<div className="ucsc-events-cache-controls">
+						<Button
+							variant="secondary"
+							onClick={clearCache}
+							disabled={!apiUrl || isLoading}
+							isBusy={isLoading}
+						>
+							{__('Clear Cache', 'ucsc-events')}
+						</Button>
+						{cacheCleared && (
+							<Notice status="success" isDismissible={false}>
+								{__('Cache cleared successfully!', 'ucsc-events')}
+							</Notice>
+						)}
+					</div>
+				</PanelBody>
+			</InspectorControls>
+
+			<div {...blockProps}>
+				{!apiUrl && (
+					<div className="ucsc-events-placeholder">
+						<div className="ucsc-events-placeholder-content">
+							<h3>{__('UCSC Events', 'ucsc-events')}</h3>
+							<p>{__('Enter an API URL in the block settings to fetch and display events.', 'ucsc-events')}</p>
+						</div>
+					</div>
+				)}
+
+				{apiUrl && isLoading && (
+					<div className="ucsc-events-loading">
+						<Spinner />
+						<span>{__('Loading events...', 'ucsc-events')}</span>
+					</div>
+				)}
+
+				{apiUrl && error && (
+					<Notice status="error" isDismissible={false}>
+						{error}
+					</Notice>
+				)}
+
+				{apiUrl && !isLoading && !error && previewData.length === 0 && (
+					<Notice status="warning" isDismissible={false}>
+						{__('No events found at the specified API URL.', 'ucsc-events')}
+					</Notice>
+				)}
+
+				{apiUrl && !isLoading && !error && previewData.length > 0 && (
+					<div className="ucsc-events-list">
+						{previewData.map(renderEventItem)}
+					</div>
+				)}
+			</div>
+		</>
+	);
+}]]></content>
+  </file>
+  <file path="src/save.js">
+    <content><![CDATA[
+]]></content>
+  </file>
+  <file path="src/style.scss">
+    <content><![CDATA[
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ */
+
+.wp-block-telex-ucsc-events {
+	margin: 2rem 0;
+
+	&.layout-list {
+		.ucsc-events-list {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+		}
+
+		.ucsc-event-item {
+			display: flex;
+			gap: 1.5rem;
+			padding: 1.5rem;
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			transition: box-shadow 0.2s ease;
+
+			&:hover {
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+		}
+
+		.ucsc-event-image {
+			flex-shrink: 0;
+			width: 150px;
+			height: 100px;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				border-radius: 4px;
+			}
+		}
+
+		.ucsc-event-content {
+			flex: 1;
+		}
+	}
+
+	&.layout-grid {
+		.ucsc-events-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+			gap: 2rem;
+		}
+
+		.ucsc-event-item {
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			overflow: hidden;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+			&:hover {
+				transform: translateY(-4px);
+				box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+			}
+		}
+
+		.ucsc-event-image {
+			width: 100%;
+			height: 200px;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+		}
+
+		.ucsc-event-content {
+			padding: 1.5rem;
+		}
+	}
+
+	&.layout-cards {
+		.ucsc-events-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+			gap: 1.5rem;
+		}
+
+		.ucsc-event-item {
+			background: #fff;
+			border-radius: 12px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+			transition: all 0.3s ease;
+
+			&:hover {
+				transform: translateY(-8px);
+				box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+			}
+		}
+
+		.ucsc-event-image {
+			width: 100%;
+			height: 180px;
+			position: relative;
+			overflow: hidden;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				transition: transform 0.3s ease;
+			}
+
+			&:hover img {
+				transform: scale(1.05);
+			}
+		}
+
+		.ucsc-event-content {
+			padding: 1.5rem;
+		}
+	}
+
+	// Common styles for all layouts
+	.ucsc-event-title {
+		margin: 0 0 0.75rem 0;
+		font-size: 1.2rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: #1a1a1a;
+
+		a {
+			color: inherit;
+			text-decoration: none;
+
+			&:hover {
+				color: #0073aa;
+			}
+		}
+	}
+
+	.ucsc-event-excerpt {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		color: #666;
+
+		p {
+			margin: 0 0 0.5rem 0;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
+
+	// Placeholder styles
+	.ucsc-events-placeholder {
+		padding: 3rem;
+		text-align: center;
+		background: #f8f9fa;
+		border: 2px dashed #ddd;
+		border-radius: 8px;
+
+		.ucsc-events-placeholder-content h3 {
+			margin: 0 0 1rem 0;
+			font-size: 1.5rem;
+			color: #1a1a1a;
+		}
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+
+	// Loading styles
+	.ucsc-events-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 2rem;
+		font-size: 1rem;
+		color: #666;
+	}
+
+	// Responsive design
+	@media (max-width: 768px) {
+		&.layout-list .ucsc-event-item {
+			flex-direction: column;
+		}
+
+		&.layout-list .ucsc-event-image {
+			width: 100%;
+			height: 200px;
+		}
+
+		&.layout-grid,
+		&.layout-cards {
+			.ucsc-events-list {
+				grid-template-columns: 1fr;
+			}
+		}
+	}
+}
+]]></content>
+  </file>
+  <file path="src/editor.scss">
+    <content><![CDATA[
+/**
+ * The following styles get applied inside the editor only.
+ */
+
+.wp-block-telex-ucsc-events {
+	// Editor-specific placeholder styling
+	.ucsc-events-placeholder {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		border: none;
+
+		.ucsc-events-placeholder-content h3 {
+			color: white;
+		}
+
+		p {
+			color: rgba(255, 255, 255, 0.9);
+		}
+	}
+
+	// Cache controls styling
+	.ucsc-events-cache-controls {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid #ddd;
+
+		.components-notice {
+			margin-top: 0.5rem;
+		}
+	}
+
+	// Loading state in editor
+	.ucsc-events-loading {
+		background: #f8f9fa;
+		border-radius: 4px;
+	}
+
+	// Error and warning notices
+	.components-notice {
+		margin: 1rem 0;
+	}
+}
+
+// Inspector controls styling
+.ucsc-events-inspector-controls {
+	.components-panel__body {
+		.components-base-control {
+			margin-bottom: 1rem;
+		}
+	}
+}
+]]></content>
+  </file>
+  <file path="src/view.js">
+    <content><![CDATA[/**
+ * Frontend JavaScript for UCSC Events block
+ */
+
+document.addEventListener('DOMContentLoaded', function() {
+	// Add click handlers and interactions for event items
+	const eventItems = document.querySelectorAll('.wp-block-telex-ucsc-events .ucsc-event-item');
+	
+	eventItems.forEach(function(item) {
+		// Add hover effects for better interactivity
+		item.addEventListener('mouseenter', function() {
+			this.style.transition = 'transform 0.2s ease';
+			this.style.transform = 'translateY(-2px)';
+		});
+		
+		item.addEventListener('mouseleave', function() {
+			this.style.transform = 'translateY(0)';
+		});
+
+		// Make the entire item clickable if it contains a link
+		const link = item.querySelector('a');
+		if (link && !item.classList.contains('clickable-item')) {
+			item.classList.add('clickable-item');
+			item.style.cursor = 'pointer';
+			
+			item.addEventListener('click', function(e) {
+				// Don't trigger if clicking directly on the link
+				if (e.target.tagName.toLowerCase() === 'a') {
+					return;
+				}
+				
+				// Open link in new tab
+				window.open(link.href, '_blank', 'noopener,noreferrer');
+			});
+		}
+	});
+
+	// Handle image loading errors gracefully
+	const eventImages = document.querySelectorAll('.wp-block-telex-ucsc-events .ucsc-event-image img');
+	eventImages.forEach(function(img) {
+		img.addEventListener('error', function() {
+			const imageContainer = this.closest('.ucsc-event-image');
+			if (imageContainer) {
+				imageContainer.style.display = 'none';
+			}
+		});
+	});
+
+	// Lazy load images if IntersectionObserver is supported
+	if ('IntersectionObserver' in window) {
+		const imageObserver = new IntersectionObserver((entries, observer) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const img = entry.target;
+					if (img.dataset.src) {
+						img.src = img.dataset.src;
+						img.removeAttribute('data-src');
+						observer.unobserve(img);
+						
+						// Add fade in animation
+						img.style.opacity = '0';
+						img.style.transition = 'opacity 0.3s ease';
+						
+						img.onload = function() {
+							this.style.opacity = '1';
+						};
+					}
+				}
+			});
+		}, {
+			rootMargin: '50px 0px',
+			threshold: 0.1
+		});
+
+		// Observe images with data-src attribute for lazy loading
+		const lazyImages = document.querySelectorAll('.wp-block-telex-ucsc-events img[data-src]');
+		lazyImages.forEach(img => imageObserver.observe(img));
+	}
+
+	// Add smooth scroll behavior for anchor links
+	const anchorLinks = document.querySelectorAll('.wp-block-telex-ucsc-events a[href*="#"]');
+	anchorLinks.forEach(function(link) {
+		link.addEventListener('click', function(e) {
+			const href = this.getAttribute('href');
+			const hashIndex = href.indexOf('#');
+			
+			if (hashIndex !== -1) {
+				const hash = href.substring(hashIndex + 1);
+				const target = document.getElementById(hash);
+				
+				if (target && href.indexOf(window.location.hostname) !== -1) {
+					e.preventDefault();
+					target.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
+				}
+			}
+		});
+	});
+
+	// Debug logging if needed
+	if (window.location.search.includes('debug=ucsc-events')) {
+		console.log('UCSC Events block loaded');
+		console.log('Found event blocks:', document.querySelectorAll('.wp-block-telex-ucsc-events').length);
+		console.log('Nonce available:', !!window.ucscEventsNonce);
+	}
+});]]></content>
+  </file>
+  <file path="src/render.php">
+    <content><![CDATA[<?php
+/**
+ * @see https://github.com/WordPress/gutenberg/blob/trunk/docs/reference-guides/block-api/block-metadata.md#render
+ */
+
+$api_url = $attributes['apiUrl'] ?? '';
+$item_count = $attributes['itemCount'] ?? 5;
+$layout_style = $attributes['layoutStyle'] ?? 'list';
+
+// Get the block wrapper attributes with layout class
+$wrapper_attributes = get_block_wrapper_attributes(array(
+	'class' => 'layout-' . esc_attr($layout_style)
+));
+
+// Fetch events data
+$events = array();
+if (!empty($api_url)) {
+	if (function_exists('ucsc_events_fetch_data')) {
+		$events = ucsc_events_fetch_data($api_url, $item_count);
+	}
+}
+
+// Add nonce to global JS object
+if (!wp_script_is('ucsc-events-frontend', 'done')) {
+	wp_add_inline_script(
+		'wp-block-telex-ucsc-events-view-script',
+		'window.ucscEventsNonce = ' . json_encode(wp_create_nonce('ucsc_events_nonce')) . ';',
+		'before'
+	);
+}
+
+?>
+<div <?php echo $wrapper_attributes; ?>>
+	<?php if (empty($api_url)): ?>
+		<div class="ucsc-events-placeholder">
+			<div class="ucsc-events-placeholder-content">
+				<h3><?php esc_html_e('UCSC Events', 'ucsc-events'); ?></h3>
+				<p><?php esc_html_e('No API URL configured for this block.', 'ucsc-events'); ?></p>
+			</div>
+		</div>
+	<?php elseif (empty($events)): ?>
+		<div class="ucsc-events-placeholder">
+			<div class="ucsc-events-placeholder-content">
+				<h3><?php esc_html_e('No Events Found', 'ucsc-events'); ?></h3>
+				<p><?php esc_html_e('No events could be loaded from the specified API URL.', 'ucsc-events'); ?></p>
+			</div>
+		</div>
+	<?php else: ?>
+		<div class="ucsc-events-list">
+			<?php foreach ($events as $event): ?>
+				<div class="ucsc-event-item">
+					<?php if (!empty($event['featured_image'])): ?>
+						<div class="ucsc-event-image">
+							<img 
+								src="<?php echo esc_url($event['featured_image']); ?>" 
+								alt="" 
+								loading="lazy"
+								onerror="this.style.display='none'"
+							/>
+						</div>
+					<?php endif; ?>
+					
+					<div class="ucsc-event-content">
+						<h3 class="ucsc-event-title">
+							<?php if (!empty($event['link'])): ?>
+								<a href="<?php echo esc_url($event['link']); ?>" target="_blank" rel="noopener noreferrer">
+									<?php echo wp_kses_post($event['title']); ?>
+								</a>
+							<?php else: ?>
+								<?php echo wp_kses_post($event['title']); ?>
+							<?php endif; ?>
+						</h3>
+						
+						<?php if (!empty($event['excerpt'])): ?>
+							<div class="ucsc-event-excerpt">
+								<?php echo wp_kses_post($event['excerpt']); ?>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	<?php endif; ?>
+</div>]]></content>
+  </file>
+  <file path="package.json">
+    <content><![CDATA[
+{
+	"name": "ucsc-events",
+	"version": "0.1.0",
+	"description": "Fetch and display events from external WordPress sites with customizable layouts and caching.",
+	"author": "WordPress Telex",
+	"license": "GPL-2.0-or-later",
+	"main": "build/index.js",
+	"scripts": {
+		"build": "wp-scripts build",
+		"format": "wp-scripts format",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"start": "wp-scripts start"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.15.0"
+	}
+}
+]]></content>
+  </file>
+</artefact>

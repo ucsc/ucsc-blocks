@@ -1,0 +1,52 @@
+
+/**
+ * The following styles get applied inside the editor only.
+ */
+
+.wp-block-telex-ucsc-events {
+	// Editor-specific placeholder styling
+	.ucsc-events-placeholder {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		border: none;
+
+		.ucsc-events-placeholder-content h3 {
+			color: white;
+		}
+
+		p {
+			color: rgba(255, 255, 255, 0.9);
+		}
+	}
+
+	// Cache controls styling
+	.ucsc-events-cache-controls {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid #ddd;
+
+		.components-notice {
+			margin-top: 0.5rem;
+		}
+	}
+
+	// Loading state in editor
+	.ucsc-events-loading {
+		background: #f8f9fa;
+		border-radius: 4px;
+	}
+
+	// Error and warning notices
+	.components-notice {
+		margin: 1rem 0;
+	}
+}
+
+// Inspector controls styling
+.ucsc-events-inspector-controls {
+	.components-panel__body {
+		.components-base-control {
+			margin-bottom: 1rem;
+		}
+	}
+}

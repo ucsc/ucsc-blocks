@@ -1,0 +1,42 @@
+
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ucsc/events",
+	"version": "0.1.0",
+	"title": "UCSC Events",
+	"category": "widgets",
+	"icon": "calendar-alt",
+	"description": "Fetch and display campus events.",
+	"example": {
+		"attributes": {
+			"apiUrl": "https://events.ucsc.edu/wp-json/tribe/v1/events",
+			"itemCount": 3,
+			"layoutStyle": "list"
+		}
+	},
+	"attributes": {
+		"apiUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"itemCount": {
+			"type": "number",
+			"default": 5
+		},
+		"layoutStyle": {
+			"type": "string",
+			"default": "list"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"textdomain": "ucsc-events",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
+}

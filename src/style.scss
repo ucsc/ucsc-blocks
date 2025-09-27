@@ -1,0 +1,208 @@
+
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ */
+
+.wp-block-ucsc-events {
+	margin: 2rem 0;
+
+	&.layout-list {
+		.ucsc-events-list {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+		}
+
+		.ucsc-event-item {
+			display: flex;
+			gap: 1.5rem;
+			padding: 1.5rem;
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			transition: box-shadow 0.2s ease;
+
+			&:hover {
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+		}
+
+		.ucsc-event-image {
+			flex-shrink: 0;
+			width: 150px;
+			height: 100px;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				border-radius: 4px;
+			}
+		}
+
+		.ucsc-event-content {
+			flex: 1;
+		}
+	}
+
+	&.layout-grid {
+		.ucsc-events-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+			gap: 2rem;
+		}
+
+		.ucsc-event-item {
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			overflow: hidden;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+			&:hover {
+				transform: translateY(-4px);
+				box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+			}
+		}
+
+		.ucsc-event-image {
+			width: 100%;
+			height: 200px;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+		}
+
+		.ucsc-event-content {
+			padding: 1.5rem;
+		}
+	}
+
+	&.layout-cards {
+		.ucsc-events-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+			gap: 1.5rem;
+		}
+
+		.ucsc-event-item {
+			background: #fff;
+			border-radius: 12px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+			transition: all 0.3s ease;
+
+			&:hover {
+				transform: translateY(-8px);
+				box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+			}
+		}
+
+		.ucsc-event-image {
+			width: 100%;
+			height: 180px;
+			position: relative;
+			overflow: hidden;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				transition: transform 0.3s ease;
+			}
+
+			&:hover img {
+				transform: scale(1.05);
+			}
+		}
+
+		.ucsc-event-content {
+			padding: 1.5rem;
+		}
+	}
+
+	// Common styles for all layouts
+	.ucsc-event-title {
+		margin: 0 0 0.75rem 0;
+		font-size: 1.2rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: #1a1a1a;
+
+		a {
+			color: inherit;
+			text-decoration: none;
+
+			&:hover {
+				color: #0073aa;
+			}
+		}
+	}
+
+	.ucsc-event-excerpt {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		color: #666;
+
+		p {
+			margin: 0 0 0.5rem 0;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
+
+	// Placeholder styles
+	.ucsc-events-placeholder {
+		padding: 3rem;
+		text-align: center;
+		background: #f8f9fa;
+		border: 2px dashed #ddd;
+		border-radius: 8px;
+
+		.ucsc-events-placeholder-content h3 {
+			margin: 0 0 1rem 0;
+			font-size: 1.5rem;
+			color: #1a1a1a;
+		}
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+
+	// Loading styles
+	.ucsc-events-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 2rem;
+		font-size: 1rem;
+		color: #666;
+	}
+
+	// Responsive design
+	@media (max-width: 768px) {
+		&.layout-list .ucsc-event-item {
+			flex-direction: column;
+		}
+
+		&.layout-list .ucsc-event-image {
+			width: 100%;
+			height: 200px;
+		}
+
+		&.layout-grid,
+		&.layout-cards {
+			.ucsc-events-list {
+				grid-template-columns: 1fr;
+			}
+		}
+	}
+}
