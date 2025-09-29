@@ -1,16 +1,17 @@
 <?php
 /**
- * Plugin Name:       UCSC Events
- * Description:       Fetch and display campus events.
- * Version:           0.1.0
+ * Plugin Name:       UCSC Blocks
+ * Description:       Blocks for UCSC WordPress websites.
+ * Version:           1.0.0
  * Requires at least: 6.1
  * Requires PHP:      7.0
- * Author:            WordPress Telex
+ * Author:            University of California, Santa Cruz
+ * Author URI:        https://github.com/ucsc
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       ucsc-events
+ * Text Domain:       ucsc-blocks
  *
- * @package UcscEvents
+ * @package UcscBlocks
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,10 +25,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @see https://developer.wordpress.org/reference/functions/register_block_type/
  */
-function ucsc_events_ucsc_events_block_init() {
-	register_block_type( __DIR__ . '/build/' );
+function ucsc_blocks_init() {
+	$custom_blocks = array(
+		'ucsc-events'
+	);
+
+	foreach ($custom_blocks as $block) {
+		register_block_type(__DIR__ . '/build/blocks/' . $block);
+	}
 }
-add_action( 'init', 'ucsc_events_ucsc_events_block_init' );
+add_action( 'init', 'ucsc_blocks_init' );
 
 /**
  * Enqueue scripts for the block editor

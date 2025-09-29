@@ -33,7 +33,7 @@
 		"html": false,
 		"align": ["wide", "full"]
 	},
-	"textdomain": "ucsc-events",
+	"textdomain": "ucsc-blocks",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
