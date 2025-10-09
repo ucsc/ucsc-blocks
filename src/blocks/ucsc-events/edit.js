@@ -238,8 +238,8 @@ export default function Edit( { attributes, setAttributes } ) {
 						label={__('API URL', 'ucsc-events')}
 						value={apiUrl}
 						onChange={(value) => setAttributes({ apiUrl: value.trim() })}
-						help={__('Enter the WordPress REST API URL (e.g., https://example.com/wp-json/wp/v2/posts)', 'ucsc-events')}
-						placeholder="https://example.com/wp-json/wp/v2/posts"
+						help={__('Add WordPress API URL (e.g., https://events.ucsc.edu/wp-json/tribe/events/v1/events)', 'ucsc-events')}
+						placeholder="https://events.ucsc.edu/wp-json/tribe/events/v1/events"
 					/>
 
 					<RangeControl
@@ -282,7 +282,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<div className="ucsc-events-placeholder">
 						<div className="ucsc-events-placeholder-content">
 							<h3>{__('UCSC Events', 'ucsc-events')}</h3>
-							<p>{__('Enter an API URL in the block settings to fetch and display events.', 'ucsc-events')}</p>
+							<p>{__('Enter an API URL in the block settings to display items.', 'ucsc-events')}</p>
 						</div>
 					</div>
 				)}
@@ -290,7 +290,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				{apiUrl && isLoading && (
 					<div className="ucsc-events-loading">
 						<Spinner />
-						<span>{__('Loading events...', 'ucsc-events')}</span>
+						<span>{__('Loading items...', 'ucsc-events')}</span>
 					</div>
 				)}
 
@@ -302,7 +302,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{apiUrl && !isLoading && !error && previewData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{__('No events found at the specified API URL.', 'ucsc-events')}
+						{__('No items found at the specified URL.', 'ucsc-events')}
 					</Notice>
 				)}
 
