@@ -158,22 +158,19 @@
 
 	// Placeholder styles
 	.ucsc-events-placeholder {
-		padding: 3rem;
+		padding: 2.2rem;
 		text-align: center;
-		background: #f8f9fa;
-		border: 2px dashed #ddd;
-		border-radius: 8px;
+		background: #2A7B9B;
+			background: linear-gradient(90deg, rgba(42, 123, 155, .8) 0%, rgba(201, 247, 220, 0.8) 50%, rgba(237, 221, 83, .8) 100%);
+		border-radius: 2px;
 
-		.ucsc-events-placeholder-content h3 {
-			margin: 0 0 1rem 0;
-			font-size: 1.5rem;
-			color: #1a1a1a;
-		}
-
-		p {
+		.ucsc-events-placeholder-content p {
 			margin: 0;
-			color: #666;
+			font-size: 1.3rem;
+			color: #121212;
+			font-weight: 500;
 		}
+
 	}
 
 	// Loading styles

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @see https://github.com/WordPress/gutenberg/blob/trunk/docs/reference-guides/block-api/block-metadata.md#render
  */
@@ -31,18 +32,10 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 
 ?>
 <div <?php echo $wrapper_attributes; ?>>
-	<?php if (empty($api_url)): ?>
+	<?php if (empty($api_url) or empty($events)): ?>
 		<div class="ucsc-events-placeholder">
 			<div class="ucsc-events-placeholder-content">
-				<h3><?php esc_html_e('UCSC Events', 'ucsc-events'); ?></h3>
-				<p><?php esc_html_e('No API URL configured for this block.', 'ucsc-events'); ?></p>
-			</div>
-		</div>
-	<?php elseif (empty($events)): ?>
-		<div class="ucsc-events-placeholder">
-			<div class="ucsc-events-placeholder-content">
-				<h3><?php esc_html_e('No Events Found', 'ucsc-events'); ?></h3>
-				<p><?php esc_html_e('No events could be loaded from the specified API URL.', 'ucsc-events'); ?></p>
+				<p><?php _e('Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-events'); ?></p>
 			</div>
 		</div>
 	<?php else: ?>
@@ -51,15 +44,14 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 				<div class="ucsc-event-item">
 					<?php if (!empty($event['featured_image'])): ?>
 						<div class="ucsc-event-image">
-							<img 
-								src="<?php echo esc_url($event['featured_image']); ?>" 
-								alt="" 
+							<img
+								src="<?php echo esc_url($event['featured_image']); ?>"
+								alt=""
 								loading="lazy"
-								onerror="this.style.display='none'"
-							/>
+								onerror="this.style.display='none'" />
 						</div>
 					<?php endif; ?>
-					
+
 					<div class="ucsc-event-content">
 						<h3 class="ucsc-event-title">
 							<?php if (!empty($event['link'])): ?>
@@ -70,7 +62,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 								<?php echo wp_kses_post($event['title']); ?>
 							<?php endif; ?>
 						</h3>
-						
+
 						<?php if (!empty($event['date'])): ?>
 							<div class="ucsc-event-date">
 								<?php echo wp_kses_post($event['date']); ?>
@@ -82,7 +74,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 								<?php echo wp_kses_post($event['venue']); ?>
 							</div>
 						<?php endif; ?>
-						
+
 					</div>
 				</div>
 			<?php endforeach; ?>
