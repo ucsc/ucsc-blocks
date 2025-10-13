@@ -1,9 +1,9 @@
 
 {
-	"name": "ucsc-events",
-	"version": "0.1.0",
-	"description": "Fetch and display campus events.",
-	"author": "UCSC Communications",
+	"name": "ucsc-blocks",
+	"version": "1.0.0",
+	"description": "Custom blocks for UCSC WordPress websites.",
+	"author": "UC Santa Cruz Communications",
 	"license": "GPL-2.0-or-later",
 	"main": "build/index.js",
 	"scripts": {
@@ -17,5 +17,28 @@
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^30.15.0"
+	},
+	"files": [
+		"build",
+		"ucsc-blocks.php",
+		"README.md",
+		"CHANGELOG.md",
+		"LICENSE"
+	],
+	"standard-version": {
+		"bumpFiles": [
+			{
+				"filename": "package-lock.json",
+				"type": "json"
+			},
+			{
+				"filename": "package.json",
+				"type": "json"
+			},
+			{
+				"filename": "ucsc-blocks.php",
+				"updater": "wp-plugin-version-updater.js"
+			}
+		]
 	}
 }
