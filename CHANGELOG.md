@@ -1,0 +1,14 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## 1.1.0 (2025-10-13)
+
+
+### Features
+
+* ⚡️ Add automatic versioning through standard-version ([7578b65](https://github.com/ucsc/ucsc-blocks/commit/7578b65607d10c869f20ca584cd10472793d8065))
+* ⚡️ Re-factor this plugin for multiple blocks ([1203754](https://github.com/ucsc/ucsc-blocks/commit/1203754fbd397c5c001ec2111d056f75cd1df36d))
+* ✨ Add automatic build artifacts to new releases ([23090fd](https://github.com/ucsc/ucsc-blocks/commit/23090fdd7f3c0448746613ad6c4f5006f9881544))
+* 🎨 Better display of the 'no events found' message to visitors ([41caffd](https://github.com/ucsc/ucsc-blocks/commit/41caffd60f54e46cd58a75b11983175234b3a068))
+* 🎨 Better display of the 'no events found' message to visitors ([c34d78e](https://github.com/ucsc/ucsc-blocks/commit/c34d78e2ee68e31400e83b9b817175207b60484b))
