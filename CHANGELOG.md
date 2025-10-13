@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/ucsc/ucsc-blocks/compare/v1.1.1...v1.1.2) (2025-10-13)
+
+
+### Bug Fixes
+
+* 🔥 Remove Composer dependency ([d27e7ce](https://github.com/ucsc/ucsc-blocks/commit/d27e7ce5aaa9dc85248e9a8004f470b39027131e))
+
 ### [1.1.1](https://github.com/ucsc/ucsc-blocks/compare/v1.1.0...v1.1.1) (2025-10-13)
 
 ## 1.1.0 (2025-10-13)
