@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.3](https://github.com/ucsc/ucsc-blocks/compare/v1.1.2...v1.1.3) (2025-10-13)
+
+
+### Bug Fixes
+
+* ⚡️ Accommodate spaces in version numbers in PHP files ([d99bf33](https://github.com/ucsc/ucsc-blocks/commit/d99bf3386c81a4198a0c19e89d03fd2fcc9afe7c))
+
 ### [1.1.2](https://github.com/ucsc/ucsc-blocks/compare/v1.1.1...v1.1.2) (2025-10-13)
 
 
