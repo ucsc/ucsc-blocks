@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/ucsc/ucsc-blocks/compare/v1.1.3...v1.1.4) (2025-11-05)
+
+
+### Bug Fixes
+
+* 🐛 Clearing the cache works now. And help link to Google Sheet added ([8b76a80](https://github.com/ucsc/ucsc-blocks/commit/8b76a80618f7b466b420e2e4093d4df6dc077626))
+
 ### [1.1.3](https://github.com/ucsc/ucsc-blocks/compare/v1.1.2...v1.1.3) (2025-10-13)
 
 
