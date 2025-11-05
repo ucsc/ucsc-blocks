@@ -68,14 +68,21 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
 	];
 
-	// Fetch preview data when API URL or item count changes
+	// Fetch preview data when API URL or item count changes (debounced)
 	useEffect(() => {
-		if (apiUrl) {
-			fetchPreviewData();
-		} else {
+		if (!apiUrl) {
 			setPreviewData([]);
 			setError('');
+			return;
 		}
+
+		// Debounce API calls - wait 500ms after user stops typing
+		const timeoutId = setTimeout(() => {
+			fetchPreviewData();
+		}, 1000);
+
+		// Cleanup function to cancel the timeout if apiUrl changes again
+		return () => clearTimeout(timeoutId);
 	}, [apiUrl, itemCount]);
 
 	const fetchPreviewData = async () => {
@@ -153,14 +160,14 @@ export default function Edit( { attributes, setAttributes } ) {
 		if (!apiUrl) return;
 
 		setIsLoading(true);
-		
+
 		try {
 			const formData = new FormData();
 			formData.append('action', 'ucsc_events_clear_cache');
 			formData.append('api_url', apiUrl);
-			formData.append('nonce', window.ucscEventsNonce || '');
+			formData.append('nonce', window.ucscEventsData?.nonce || '');
 
-			const response = await fetch(ajaxurl || '/wp-admin/admin-ajax.php', {
+			const response = await fetch(window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php', {
 				method: 'POST',
 				body: formData
 			});
@@ -238,7 +245,15 @@ export default function Edit( { attributes, setAttributes } ) {
 						label={__('API URL', 'ucsc-events')}
 						value={apiUrl}
 						onChange={(value) => setAttributes({ apiUrl: value.trim() })}
-						help={__('Add WordPress API URL (e.g., https://events.ucsc.edu/wp-json/tribe/events/v1/events)', 'ucsc-events')}
+						help={
+							<>
+								{__('See ', 'ucsc-events')}
+                                <a href="https://docs.google.com/spreadsheets/d/16DKhaoxPc2h9qMHah6_fvHTvizZbIlEvOVvMW3Hxg-c/edit?gid=1514211697#gid=1514211697" target="_blank" rel="noopener noreferrer">
+                                    this Google Sheet
+								</a>
+                                {__(' ↗️ for help.', 'ucsc-events')}
+							</>
+						}
 						placeholder="https://events.ucsc.edu/wp-json/tribe/events/v1/events"
 					/>
 

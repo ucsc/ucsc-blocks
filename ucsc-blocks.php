@@ -78,7 +78,7 @@ function ucsc_events_clear_cache() {
 
 	// Check user permissions
 	if ( ! current_user_can( 'edit_posts' ) ) {
-		wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		wp_send_json_error( array( 'message' => 'Insufficient permissions to clear the cache' ) );
 		return;
 	}
 
