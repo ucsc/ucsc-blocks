@@ -5,7 +5,7 @@
  */
 
 $api_url = $attributes['apiUrl'] ?? '';
-$item_count = $attributes['itemCount'] ?? 5;
+$item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
 
 // Get the block wrapper attributes with layout class

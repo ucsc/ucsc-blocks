@@ -102,7 +102,7 @@ add_action( 'wp_ajax_ucsc_events_clear_cache', 'ucsc_events_clear_cache' );
  * Fetch events data from external API
  */
 if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
-	function ucsc_events_fetch_data( $api_url, $per_page = 5 ) {
+	function ucsc_events_fetch_data( $api_url, $per_page = 6 ) {
 		if ( empty( $api_url ) ) {
 			return array();
 		}
@@ -123,7 +123,8 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 
 		// Prepare API URL with per_page parameter
 		$full_url = add_query_arg( array(
-			'per_page' => absint( $per_page )
+			'per_page' => absint( $per_page ),
+            'starts_after' => 'today'
 		), $api_url );
 
 		// Fetch data from API
@@ -184,7 +185,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		}
 
 		// Cache the processed data for 15 minutes
-		set_transient( $cache_key, $events, 30 * MINUTE_IN_SECONDS );
+		set_transient( $cache_key, $events, HOUR_IN_SECONDS );
 
 		return $events;
 	}

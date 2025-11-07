@@ -101,6 +101,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 
 			url.searchParams.set('per_page', itemCount);
+            url.searchParams.set('starts_after', 'today');
 
 			const response = await fetch(url.toString(), {
 				method: 'GET',
@@ -262,7 +263,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						value={itemCount}
 						onChange={(value) => setAttributes({ itemCount: value })}
 						min={1}
-						max={20}
+						max={40}
 						help={__('Maximum number of events to display', 'ucsc-events')}
 					/>
 
