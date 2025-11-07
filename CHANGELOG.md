@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/ucsc/ucsc-blocks/compare/v1.1.4...v1.2.0) (2025-11-07)
+
+
+### Features
+
+* ✨ Show up to 40 events; display only events that start after today ([55b97dc](https://github.com/ucsc/ucsc-blocks/commit/55b97dce3e3d34553ea5da964bd55751a912adad))
+
+
+### Bug Fixes
+
+* 🐛 Clearing the cache clears up to 40 keys ([31bc322](https://github.com/ucsc/ucsc-blocks/commit/31bc3221b9ab1fcae75d1142ad15e51aae81b780))
+
 ### [1.1.4](https://github.com/ucsc/ucsc-blocks/compare/v1.1.3...v1.1.4) (2025-11-05)
 
 

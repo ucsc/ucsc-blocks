@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       UCSC Blocks
  * Description:       Blocks for UCSC WordPress websites.
- * Version: 1.1.4
+ * Version: 1.2.0
  * Requires at least: 6.1
  * Requires PHP:      7.0
  * Author:            University of California, Santa Cruz
