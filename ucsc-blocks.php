@@ -86,7 +86,7 @@ function ucsc_events_clear_cache() {
 	
 	if ( ! empty( $api_url ) ) {
 		// Clear cache for different item counts
-		for ( $i = 1; $i <= 20; $i++ ) {
+		for ( $i = 1; $i <= 40; $i++ ) {
 			$cache_key = 'ucsc_events_' . md5( $api_url . $i );
 			delete_transient( $cache_key );
 		}
