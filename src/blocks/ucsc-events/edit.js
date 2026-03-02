@@ -101,7 +101,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 
 			url.searchParams.set('per_page', itemCount);
-            url.searchParams.set('starts_on_or_after', 'today');
+            url.searchParams.set('starts_after', 'yesterday');
 
 			const response = await fetch(url.toString(), {
 				method: 'GET',
