@@ -124,7 +124,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		// Prepare API URL with per_page parameter
 		$full_url = add_query_arg( array(
 			'per_page' => absint( $per_page ),
-            'starts_after' => 'today'
+            'starts_after' => 'yesterday'
 		), $api_url );
 
 		// Fetch data from API
