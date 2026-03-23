@@ -1,0 +1,38 @@
+/**
+ * Editor-only styles for the ICS Calendar block.
+ */
+
+.wp-block-ucsc-ics-calendar {
+    .ucsc-ics-placeholder {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+
+        .ucsc-ics-placeholder-content h3 {
+            color: white;
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+    }
+
+    .ucsc-ics-cache-controls {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+
+        .components-notice {
+            margin-top: 0.5rem;
+        }
+    }
+
+    .ucsc-ics-loading {
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .components-notice {
+        margin: 1rem 0;
+    }
+}

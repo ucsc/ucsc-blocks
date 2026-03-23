@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ucsc/ics-calendar",
+	"version": "0.1.0",
+	"title": "ICS Calendar",
+	"category": "widgets",
+	"icon": "calendar",
+	"description": "Fetch and display events from an ICS/iCal feed URL.",
+	"example": {
+		"attributes": {
+			"feedUrl": "https://example.com/calendar.ics",
+			"itemCount": 5,
+			"layoutStyle": "list"
+		}
+	},
+	"attributes": {
+		"feedUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"itemCount": {
+			"type": "number",
+			"default": 5
+		},
+		"layoutStyle": {
+			"type": "string",
+			"default": "list"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"textdomain": "ucsc-blocks",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
+}

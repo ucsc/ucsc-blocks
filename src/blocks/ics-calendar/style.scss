@@ -1,0 +1,145 @@
+/**
+ * Shared styles for the ICS Calendar block (editor + frontend).
+ */
+
+.wp-block-ucsc-ics-calendar {
+    margin: 2rem 0;
+
+    // ── List layout ──────────────────────────────────────────────
+    &.layout-list {
+        .ucsc-ics-events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .ucsc-ics-event-item {
+            padding: 1.25rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            transition: box-shadow 0.2s ease;
+
+            &:hover {
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+        }
+    }
+
+    // ── Grid layout ──────────────────────────────────────────────
+    &.layout-grid {
+        .ucsc-ics-events-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .ucsc-ics-event-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+            &:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            }
+        }
+    }
+
+    // ── Common element styles ────────────────────────────────────
+    .ucsc-ics-event-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: #1a1a1a;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                color: #0073aa;
+            }
+        }
+    }
+
+    .ucsc-ics-event-date {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.35rem;
+    }
+
+    .ucsc-ics-event-location {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.35rem;
+
+        &::before {
+            content: "📍 ";
+        }
+
+        // When the location is a link, swap the pin for a video icon.
+        &:has(> a)::before {
+            content: "🔗 ";
+        }
+
+        a {
+            color: #0073aa;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .ucsc-ics-event-description {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    // ── Placeholder ──────────────────────────────────────────────
+    .ucsc-ics-placeholder {
+        padding: 2.2rem;
+        text-align: center;
+        background: #2a7b9b;
+        background: linear-gradient(
+            90deg,
+            rgba(42, 123, 155, 0.8) 0%,
+            rgba(201, 247, 220, 0.8) 50%,
+            rgba(237, 221, 83, 0.8) 100%
+        );
+        border-radius: 2px;
+
+        .ucsc-ics-placeholder-content p {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #121212;
+            font-weight: 500;
+        }
+    }
+
+    // ── Loading ──────────────────────────────────────────────────
+    .ucsc-ics-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 2rem;
+        font-size: 1rem;
+        color: #666;
+    }
+
+    // ── Responsive ───────────────────────────────────────────────
+    @media (max-width: 768px) {
+        &.layout-grid {
+            .ucsc-ics-events-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}
