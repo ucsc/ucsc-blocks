@@ -65,6 +65,20 @@ Uses `standard-version`. Version is tracked in three places (automatically bumpe
 - WordPress PHP coding standards (function naming: `ucsc_<block>_<action>`)
 - WordPress JS/React patterns with `@wordpress/*` packages
 
+## External Data Security
+
+All content fetched from external sources (APIs, ICS feeds, etc.) must be treated as untrusted and sanitized before it is cached, stored, or rendered. Follow these rules:
+
+- **Text fields**: Pass through `sanitize_text_field()` before caching. For longer content intended as plain text, use `wp_strip_all_tags()` before storage.
+- **URLs from external data**: Validate with `esc_url_raw()` restricted to `https` and `http` schemes before caching. Use `esc_url()` again at render time.
+- **HTML output**: Use `esc_html()` for plain-text values in templates. Only use `wp_kses_post()` when markup is intentionally preserved, and never on raw external input.
+- **Feed/API URLs provided by editors**: Validate scheme (HTTPS only), resolve the hostname, and reject private/reserved IP ranges to prevent SSRF. See `ucsc_ics_validate_feed_url()` for the reference implementation.
+- **Response bodies**: Enforce a maximum size (e.g. 2 MB) before parsing to prevent memory exhaustion.
+- **Numeric inputs**: Clamp to expected bounds with `absint()`, `intval()`, and `min()`/`max()` at every entry point (block attributes, AJAX handlers).
+- **Caching**: Sanitize data *before* writing to transients so cached values are already clean.
+- **Datetime parsing**: Accept only well-defined formats; never fall back to permissive parsing like `strtotime()` on external input.
+
 ## Current Blocks
 
 - **ucsc-events** (`ucsc/events`): Fetches and displays campus events from an external API. Supports list, grid, and card layouts. Caches API responses using WordPress transients.
+- **ics-calendar** (`ucsc/ics-calendar`): Fetches and displays upcoming events from an ICS/iCal feed URL. Supports list and grid layouts. Parses VEVENT data server-side, caches with transients, and includes SSRF protection and input sanitization.
