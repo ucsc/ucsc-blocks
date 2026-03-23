@@ -19,6 +19,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Include block-specific PHP files.
+ */
+$ucsc_block_includes = array(
+	'ics-calendar/ics-calendar.php',
+);
+
+foreach ( $ucsc_block_includes as $include ) {
+	$file = __DIR__ . '/build/blocks/' . $include;
+	if ( file_exists( $file ) ) {
+		require_once $file;
+	}
+}
+
+/**
  * Registers the block using the metadata loaded from the `block.json` file.
  * Behind the scenes, it registers also all assets so they can be enqueued
  * through the block editor in the corresponding context.
@@ -27,7 +41,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function ucsc_blocks_init() {
 	$custom_blocks = array(
-		'ucsc-events'
+		'ucsc-events',
+		'ics-calendar',
 	);
 
 	foreach ($custom_blocks as $block) {
@@ -50,6 +65,21 @@ function ucsc_events_enqueue_block_editor_assets() {
 	);
 }
 add_action( 'enqueue_block_editor_assets', 'ucsc_events_enqueue_block_editor_assets' );
+
+/**
+ * Enqueue editor scripts for the ICS Calendar block
+ */
+function ucsc_ics_calendar_enqueue_block_editor_assets() {
+	wp_localize_script(
+		'ucsc-ics-calendar-editor-script',
+		'ucscIcsCalendarData',
+		array(
+			'nonce'   => wp_create_nonce( 'ucsc_ics_calendar_nonce' ),
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		)
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'ucsc_ics_calendar_enqueue_block_editor_assets' );
 
 /**
  * Add nonce to frontend

@@ -1,0 +1,156 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//UCSC Blocks//Test Fixtures//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:UCSC Test Calendar
+X-WR-TIMEZONE:America/Los_Angeles
+
+BEGIN:VEVENT
+DTSTART:20260401T090000Z
+DTEND:20260401T103000Z
+DTSTAMP:20260301T120000Z
+UID:evt-001@ucsc-test
+SUMMARY:Spring Quarter Orientation
+DESCRIPTION:Welcome session for new students.\nIncludes campus tour and lunch.
+LOCATION:Stevenson Event Center\, UC Santa Cruz
+URL:https://events.ucsc.edu/orientation-spring-2026
+STATUS:CONFIRMED
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20260405T140000
+DTEND;TZID=America/Los_Angeles:20260405T160000
+DTSTAMP:20260301T120000Z
+UID:evt-002@ucsc-test
+SUMMARY:Faculty Research Symposium: "AI & Ethics in Higher Education"
+DESCRIPTION:Panel discussion featuring faculty from Computer Science\, Phil
+ osophy\, and the Humanities Division. Q&A session follows.\nLight refreshme
+ nts provided.
+LOCATION:Humanities Lecture Hall\, Room 206
+URL:https://events.ucsc.edu/research-symposium-ai-ethics
+STATUS:CONFIRMED
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260410
+DTEND;VALUE=DATE:20260411
+DTSTAMP:20260301T120000Z
+UID:evt-003@ucsc-test
+SUMMARY:Admissions Open House (All Day)
+DESCRIPTION:Prospective students and families are invited to explore campus. No registration required.
+LOCATION:UC Santa Cruz Main Campus
+URL:https://admissions.ucsc.edu/open-house
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20260415T180000Z
+DTEND:20260415T200000Z
+DTSTAMP:20260301T120000Z
+UID:evt-004@ucsc-test
+SUMMARY:Concert: Santa Cruz Chamber Players
+DESCRIPTION:Program includes works by Beethoven\; Debussy\; and Caroline Shaw.
+LOCATION:Music Center Recital Hall
+URL:https://arts.ucsc.edu/chamber-players-spring
+ATTACH;FMTTYPE=image/jpeg:https://arts.ucsc.edu/images/chamber-spring-2026.jpg
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20260420T100000
+DTEND;TZID=America/Los_Angeles:20260420T120000
+DTSTAMP:20260301T120000Z
+UID:evt-005@ucsc-test
+SUMMARY:Banana Slug Spring Fair
+DESCRIPTION:Annual alumni weekend celebration with food\, music\, and campus reunions.
+LOCATION:East Field\, UC Santa Cruz
+URL:https://alumni.ucsc.edu/banana-slug-spring-fair
+IMAGE;VALUE=URI;DISPLAY=BADGE:https://alumni.ucsc.edu/images/bssf-badge.png
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20260422T230000Z
+DTEND:20260423T010000Z
+DTSTAMP:20260301T120000Z
+UID:evt-006@ucsc-test
+SUMMARY:Astronomy Night: Lick Observatory Public Viewing
+DESCRIPTION:Open telescope viewing (weather permitting).\nMeet at the main observatory parking lot by 10:45 PM.
+LOCATION:Lick Observatory\, Mt. Hamilton
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/New_York:20260501T120000
+DTEND;TZID=America/New_York:20260501T130000
+DTSTAMP:20260301T120000Z
+UID:evt-007@ucsc-test
+SUMMARY:Webinar — Grant Writing for Early-Career Researchers
+DESCRIPTION:Online workshop. Zoom link will be emailed to registrants 24 hours before the event.
+LOCATION:Online (Zoom)
+URL:https://research.ucsc.edu/grant-writing-webinar
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260612
+DTEND;VALUE=DATE:20260614
+DTSTAMP:20260301T120000Z
+UID:evt-008@ucsc-test
+SUMMARY:Commencement Weekend 2026
+DESCRIPTION:Ceremonies for all colleges and divisions. Detailed schedule at commencement.ucsc.edu.
+LOCATION:Upper East Field & College Plazas
+URL:https://commencement.ucsc.edu
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20250101T090000Z
+DTEND:20250101T100000Z
+DTSTAMP:20240901T120000Z
+UID:evt-009@ucsc-test
+SUMMARY:Past Event — Should Be Filtered Out
+DESCRIPTION:This event occurred in the past and should not appear in upcoming listings.
+LOCATION:Nowhere
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20260418T083000
+DTEND;TZID=America/Los_Angeles:20260418T093000
+DTSTAMP:20260301T120000Z
+UID:evt-010@ucsc-test
+SUMMARY:Café & Croissants: Grad Student Social ☕
+DESCRIPTION:Informal morning meetup at the Graduate Commons.\nFree coffee\, pastries\, & good company — all grad students welcome!
+LOCATION:Graduate Student Commons\, Hahn Building
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20260425T170000Z
+DTEND:20260425T190000Z
+DTSTAMP:20260301T120000Z
+UID:evt-011@ucsc-test
+SUMMARY:
+DESCRIPTION:An event with no title to test the "Untitled Event" fallback.
+LOCATION:TBD
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20260430T160000Z
+DTSTAMP:20260301T120000Z
+UID:evt-012@ucsc-test
+SUMMARY:Drop-In Office Hours (No End Time)
+DESCRIPTION:Open office hours with the Dean of Students. No appointment needed. This event has no DTEND property.
+LOCATION:Hahn 126
+URL:https://deanofstudents.ucsc.edu/office-hours
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20260507T110000
+DTEND;TZID=America/Los_Angeles:20260507T120000
+DTSTAMP:20260301T120000Z
+UID:evt-013@ucsc-test
+SUMMARY:Dissertation Defense: Maria Chen — Coastal Erosion Modeling
+DESCRIPTION:Join via Zoom (passcode: 839201). Committee: Dr. Patel (chair)
+ \, Dr. Okafor\, Dr. Lindström.\nPublic attendees may observe but should rem
+ ain muted during Q&A.
+LOCATION:https://ucsc.zoom.us/j/98765432100?pwd=xYzAbCdEfG
+URL:https://graddiv.ucsc.edu/defenses/chen-2026
+CONFERENCE;VALUE=URI:https://ucsc.zoom.us/j/98765432100?pwd=xYzAbCdEfG
+END:VEVENT
+
+END:VCALENDAR
