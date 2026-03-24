@@ -13,6 +13,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Enqueue editor scripts for the ICS Calendar block
+ */
+function ucsc_ics_calendar_enqueue_block_editor_assets() {
+    wp_localize_script(
+        'ucsc-ics-calendar-editor-script',
+        'ucscIcsCalendarData',
+        array(
+            'nonce'   => wp_create_nonce( 'ucsc_ics_calendar_nonce' ),
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+        )
+    );
+}
+add_action( 'enqueue_block_editor_assets', 'ucsc_ics_calendar_enqueue_block_editor_assets' );
+
+/**
  * Parse an ICS feed string into an array of events.
  *
  * Lightweight parser that extracts VEVENT components and their properties.
