@@ -29,6 +29,7 @@ add_action( 'enqueue_block_editor_assets', 'ucsc_events_enqueue_block_editor_ass
  */
 function ucsc_events_enqueue_frontend_assets() {
 	if (has_block('ucsc/events')) {
+		wp_enqueue_style('dashicons');
 		wp_add_inline_script(
 			'wp-block-ucsc-events-view-script',
 			'window.ucscEventsNonce = ' . json_encode(wp_create_nonce('ucsc_events_nonce')) . ';\n' .
@@ -58,11 +59,8 @@ function ucsc_events_clear_cache() {
 	$api_url = isset($_POST['api_url']) ? sanitize_url( $_POST['api_url'] ) : '';
 
 	if ( ! empty( $api_url ) ) {
-		// Clear cache for different item counts
-		for ( $i = 1; $i <= 40; $i++ ) {
-			$cache_key = 'ucsc_events_' . md5( $api_url . $i );
-			delete_transient( $cache_key );
-		}
+		$cache_key = 'ucsc_events_' . md5( $api_url );
+		delete_transient( $cache_key );
 
 		wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
 	} else {
@@ -72,16 +70,19 @@ function ucsc_events_clear_cache() {
 add_action( 'wp_ajax_ucsc_events_clear_cache', 'ucsc_events_clear_cache' );
 
 /**
- * Fetch events data from external API
+ * Fetch events data from external API.
+ *
+ * Always fetches the maximum 50 events from the API and caches them.
+ * Callers are responsible for slicing the result to the desired count.
  */
 if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
-	function ucsc_events_fetch_data( $api_url, $per_page = 6 ) {
+	function ucsc_events_fetch_data( $api_url ) {
 		if ( empty( $api_url ) ) {
 			return array();
 		}
 
-		// Create cache key based on URL and per_page
-		$cache_key = 'ucsc_events_' . md5( $api_url . $per_page );
+		// Create cache key based on URL only
+		$cache_key = 'ucsc_events_' . md5( $api_url );
 
 		// Try to get cached data first
 		$cached_data = get_transient( $cache_key );
@@ -94,10 +95,10 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 			return array();
 		}
 
-		// Prepare API URL with per_page parameter
+		// Always fetch the maximum number of events (API caps at 50)
 		$full_url = add_query_arg( array(
-			'per_page' => absint( $per_page ),
-            'starts_after' => 'yesterday'
+			'per_page'     => 50,
+			'starts_after' => 'yesterday'
 		), $api_url );
 
 		// Fetch data from API
@@ -153,7 +154,8 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 				'date' => isset( $item['start_date'] ) ? date_i18n( get_option( 'date_format' ), strtotime( $item['start_date'] ) ) : '',
 				'venue' => isset( $item['venue']['venue'] ) ? $item['venue']['venue'] : '',
 				'featured_image' => $featured_image,
-				'link' => isset( $item['url'] ) ? $item['url'] : ''
+				'link' => isset( $item['url'] ) ? $item['url'] : '',
+				'slug' => isset( $item['slug'] ) ? $item['slug'] : ''
 			);
 		}
 
