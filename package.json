@@ -21,6 +21,7 @@
 	},
 	"files": [
 		"build",
+        "vendor",
 		"ucsc-blocks.php",
 		"README.md",
 		"CHANGELOG.md",
