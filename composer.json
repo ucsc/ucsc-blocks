@@ -1,0 +1,15 @@
+{
+	"name": "ucsc/ucsc-blocks",
+	"description": "Custom Gutenberg blocks for UC Santa Cruz websites.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require-dev": {
+		"phpunit/phpunit": "^10"
+	},
+	"config": {
+		"allow-plugins": false
+	},
+	"require": {
+		"yahnis-elsts/plugin-update-checker": "^5.6"
+	}
+}
