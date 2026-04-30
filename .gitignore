@@ -16,3 +16,4 @@ yarn-error.log*
 *.sublime-workspace
 *.code-workspace
 *.log
+*.cache
