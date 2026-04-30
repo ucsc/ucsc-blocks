@@ -19,7 +19,7 @@ import {
     ToolbarButton,
     Spinner,
 } from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
+import { RawHTML, useState, useEffect } from '@wordpress/element';
 
 import './editor.scss';
 
@@ -39,7 +39,9 @@ export default function Edit( { attributes, setAttributes } ) {
         { label: __( 'Grid', 'ucsc-blocks' ), value: 'grid' },
     ];
 
-    // Fetch preview when feed URL or count changes (debounced).
+    // Fetch preview when the feed URL changes (debounced).
+    // The item count is applied client-side so changing it does not
+    // trigger a new network request.
     useEffect( () => {
         if ( ! feedUrl ) {
             setPreviewData( [] );
@@ -52,7 +54,7 @@ export default function Edit( { attributes, setAttributes } ) {
         }, 1000 );
 
         return () => clearTimeout( timeoutId );
-    }, [ feedUrl, itemCount ] );
+    }, [ feedUrl ] );
 
     /**
      * Fetch ICS data for the editor preview.
@@ -77,7 +79,7 @@ export default function Edit( { attributes, setAttributes } ) {
             const formData = new FormData();
             formData.append( 'action', 'ucsc_ics_calendar_preview' );
             formData.append( 'feed_url', feedUrl );
-            formData.append( 'item_count', itemCount );
+            formData.append( 'item_count', 20 );
             formData.append( 'nonce', window.ucscIcsCalendarData?.nonce || '' );
 
             const response = await fetch(
@@ -154,17 +156,25 @@ export default function Edit( { attributes, setAttributes } ) {
                 ) }
                 { event.location && (
                     <div className="ucsc-ics-event-location">
-                        { /^https?:\/\//i.test( event.location ) ? (
-                            <a href={ event.location } rel="noopener noreferrer">
-                                { new URL( event.location ).hostname }
-                            </a>
-                        ) : (
-                            event.location
-                        ) }
+                        { ( () => {
+                            try {
+                                const u = new URL( event.location );
+                                if ( u.protocol === 'https:' || u.protocol === 'http:' ) {
+                                    return (
+                                        <a href={ u.href } rel="noopener noreferrer">
+                                            { u.hostname }
+                                        </a>
+                                    );
+                                }
+                            } catch {}
+                            return event.location;
+                        } )() }
                     </div>
                 ) }
                 { event.description && (
-                    <div className="ucsc-ics-event-description">{ event.description }</div>
+                    <RawHTML className="ucsc-ics-event-description">
+                        { event.description }
+                    </RawHTML>
                 ) }
             </div>
         </div>
@@ -261,7 +271,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
                 { feedUrl && ! isLoading && ! error && previewData.length > 0 && (
                     <div className="ucsc-ics-events-list">
-                        { previewData.map( renderEventItem ) }
+                        { previewData.slice( 0, itemCount ).map( renderEventItem ) }
                     </div>
                 ) }
             </div>

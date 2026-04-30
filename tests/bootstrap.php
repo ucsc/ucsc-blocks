@@ -102,6 +102,16 @@ if ( file_exists( $wp_tests_dir . '/includes/functions.php' ) ) {
             return implode( ' ', array_slice( $words, 0, $num_words ) ) . $more;
         }
     }
+    if ( ! function_exists( 'wp_kses' ) ) {
+        function wp_kses( $content, $allowed_html, $allowed_protocols = [] ) {
+            $allowed_tags = '';
+            foreach ( array_keys( $allowed_html ) as $tag ) {
+                $allowed_tags .= '<' . $tag . '>';
+            }
+
+            return strip_tags( $content, $allowed_tags );
+        }
+    }
     if ( ! function_exists( 'esc_url_raw' ) ) {
         function esc_url_raw( $url, $protocols = null ) {
             if ( $protocols && ! preg_match( '#^(https?|http)://#i', $url ) ) return '';

@@ -28,6 +28,28 @@ function ucsc_ics_calendar_enqueue_block_editor_assets() {
 add_action( 'enqueue_block_editor_assets', 'ucsc_ics_calendar_enqueue_block_editor_assets' );
 
 /**
+ * Get the HTML elements allowed in event descriptions.
+ *
+ * @return array Allowed HTML tags and attributes for wp_kses().
+ */
+function ucsc_ics_allowed_description_html() {
+    return array(
+        'a'  => array(
+            'href'   => true,
+            'rel'    => true,
+            'target' => true,
+            'title'  => true,
+        ),
+        'b'  => array(),
+        'i'  => array(),
+        'li' => array(),
+        'ol' => array(),
+        'u'  => array(),
+        'ul' => array(),
+    );
+}
+
+/**
  * Parse an ICS feed string into an array of events.
  *
  * Lightweight parser that extracts VEVENT components and their properties.
@@ -227,8 +249,9 @@ define( 'UCSC_ICS_MAX_BODY_SIZE', 2 * 1024 * 1024 );
 /**
  * Fetch and parse events from an ICS feed URL.
  *
- * Results are cached using WordPress transients for 15 minutes.
- * Only future events (starting from now) are returned, sorted by start date.
+ * Results are cached using WordPress transients for 30 minutes.  The cache
+ * stores up to 20 future events keyed only by feed URL so that changing
+ * the display count does not trigger a re-fetch.
  *
  * @param string $feed_url The ICS feed URL.
  * @param int    $count    Maximum number of events to return.
@@ -242,12 +265,12 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
     // Clamp count to a sane range.
     $count = max( 1, min( 20, intval( $count ) ) );
 
-    // Cache key
-    $cache_key  = 'ucsc_ics_' . md5( $feed_url . $count );
+    // Cache key is based on URL only — count is applied after retrieval.
+    $cache_key  = 'ucsc_ics_' . md5( $feed_url );
     $cached     = get_transient( $cache_key );
 
     if ( false !== $cached ) {
-        return $cached;
+        return array_slice( $cached, 0, $count );
     }
 
     // Validate URL — scheme, host, and SSRF checks.
@@ -335,16 +358,11 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
         // Sanitize text fields from the ICS feed.
         $title    = ! empty( $raw['summary'] ) ? sanitize_text_field( $raw['summary'] ) : __( 'Untitled Event', 'ucsc-blocks' );
         $location = sanitize_text_field( $raw['location'] );
-        $desc     = wp_trim_words( wp_strip_all_tags( $raw['description'] ), 30, '&hellip;' );
-
-        // Only allow http/https URLs from the ICS URL field.
-        $event_url = '';
-        if ( ! empty( $raw['url'] ) ) {
-            $raw_url = esc_url_raw( $raw['url'], array( 'https', 'http' ) );
-            if ( ! empty( $raw_url ) ) {
-                $event_url = $raw_url;
-            }
-        }
+        $desc     = wp_kses(
+            $raw['description'],
+            ucsc_ics_allowed_description_html(),
+            array( 'http', 'https' )
+        );
 
         $events[] = array(
             'title'       => $title,
@@ -352,7 +370,6 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
             'start'       => $start,
             'location'    => $location,
             'description' => $desc,
-            'url'         => $event_url,
         );
     }
 
@@ -361,19 +378,20 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
         return $a['start'] - $b['start'];
     } );
 
-    // Limit to requested count
-    $events = array_slice( $events, 0, $count );
+    // Keep up to 20 events for caching (the maximum allowed count).
+    $events = array_slice( $events, 0, 20 );
 
-    // Remove internal 'start' timestamp before caching
+    // Remove internal 'start' timestamp before caching.
     $events = array_map( function ( $e ) {
         unset( $e['start'] );
         return $e;
     }, $events );
 
-    // Cache for 15 minutes
+    // Cache for 30 minutes — keyed by URL only so changing the display
+    // count doesn't trigger a re-fetch.
     set_transient( $cache_key, $events, 30 * MINUTE_IN_SECONDS );
 
-    return $events;
+    return array_slice( $events, 0, $count );
 }
 
 /**
@@ -393,11 +411,8 @@ function ucsc_ics_calendar_clear_cache() {
     $feed_url = isset( $_POST['feed_url'] ) ? sanitize_url( $_POST['feed_url'] ) : '';
 
     if ( ! empty( $feed_url ) ) {
-        // Clear cache for all possible item counts (max 20).
-        for ( $i = 1; $i <= 20; $i++ ) {
-            $cache_key = 'ucsc_ics_' . md5( $feed_url . $i );
-            delete_transient( $cache_key );
-        }
+        $cache_key = 'ucsc_ics_' . md5( $feed_url );
+        delete_transient( $cache_key );
 
         wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
     } else {

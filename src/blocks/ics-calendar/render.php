@@ -34,13 +34,7 @@ if ( ! empty( $feed_url ) && function_exists( 'ucsc_ics_fetch_events' ) ) {
                 <div class="ucsc-ics-event-item">
                     <div class="ucsc-ics-event-content">
                         <h3 class="ucsc-ics-event-title">
-                            <?php if ( ! empty( $event['url'] ) ) : ?>
-                                <a href="<?php echo esc_url( $event['url'] ); ?>" rel="noopener noreferrer">
-                                    <?php echo esc_html( $event['title'] ); ?>
-                                </a>
-                            <?php else : ?>
-                                <?php echo esc_html( $event['title'] ); ?>
-                            <?php endif; ?>
+                            <?php echo esc_html( $event['title'] ); ?>
                         </h3>
 
                         <?php if ( ! empty( $event['date'] ) ) : ?>
@@ -67,7 +61,13 @@ if ( ! empty( $feed_url ) && function_exists( 'ucsc_ics_fetch_events' ) ) {
 
                         <?php if ( ! empty( $event['description'] ) ) : ?>
                             <div class="ucsc-ics-event-description">
-                                <?php echo wp_kses_post( $event['description'] ); ?>
+                                <?php
+                                echo wp_kses(
+                                    $event['description'],
+                                    ucsc_ics_allowed_description_html(),
+                                    array( 'http', 'https' )
+                                );
+                                ?>
                             </div>
                         <?php endif; ?>
                     </div>

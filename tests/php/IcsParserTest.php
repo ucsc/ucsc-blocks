@@ -135,6 +135,19 @@ class IcsParserTest extends TestCase {
         $this->assertSame( [], ucsc_ics_parse( $ics ) );
     }
 
+    public function test_description_html_whitelist_allows_basic_formatting(): void {
+        $html     = '<p>Intro</p><b>Bold</b> <i>Italic</i> <u>Under</u> ';
+        $html    .= '<a href="https://calendar.ucsc.edu">Link</a><script>alert(1)</script>';
+        $filtered = wp_kses( $html, ucsc_ics_allowed_description_html(), array( 'http', 'https' ) );
+
+        $this->assertStringContainsString( '<b>Bold</b>', $filtered );
+        $this->assertStringContainsString( '<i>Italic</i>', $filtered );
+        $this->assertStringContainsString( '<u>Under</u>', $filtered );
+        $this->assertStringContainsString( '<a href="https://calendar.ucsc.edu">Link</a>', $filtered );
+        $this->assertStringNotContainsString( '<p>', $filtered );
+        $this->assertStringNotContainsString( '<script>', $filtered );
+    }
+
     // ─── ucsc_ics_validate_feed_url (if loaded with WP stubs) ───────
 
     public function test_validate_rejects_http(): void {
