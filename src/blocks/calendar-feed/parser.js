@@ -1,7 +1,7 @@
 /**
  * ICS/iCal parser — shared module.
  *
- * Mirrors the PHP implementation in ics-calendar.php so the editor
+ * Mirrors the PHP implementation in calendar-feed.php so the editor
  * preview can parse an ICS feed client-side when needed, and so the
  * logic can be tested with Jest.
  *

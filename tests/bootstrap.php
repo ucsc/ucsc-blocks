@@ -34,7 +34,7 @@ if ( file_exists( $wp_tests_dir . '/includes/functions.php' ) ) {
 } else {
     /*
      * Lightweight standalone mode: define the bare-minimum WordPress
-     * constants and function stubs so ics-calendar.php can be loaded
+     * constants and function stubs so calendar-feed.php can be loaded
      * without the full WordPress stack.  Good for CI or quick local
      * runs where you don't have wp-phpunit set up.
      */
@@ -129,6 +129,36 @@ if ( file_exists( $wp_tests_dir . '/includes/functions.php' ) ) {
         }
     }
 
-    // Load the ICS calendar PHP code.
-    require_once dirname( __DIR__ ) . '/src/blocks/ics-calendar/ics-calendar.php';
+    // ── Hook / script stubs (called at file load time) ──────────
+    if ( ! function_exists( 'add_action' ) ) {
+        function add_action( $hook, $callback, $priority = 10, $args = 1 ) {}
+    }
+    if ( ! function_exists( 'add_filter' ) ) {
+        function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {}
+    }
+    if ( ! function_exists( 'wp_localize_script' ) ) {
+        function wp_localize_script( $handle, $name, $data ) {}
+    }
+    if ( ! function_exists( 'wp_create_nonce' ) ) {
+        function wp_create_nonce( $action = '' ) { return 'stub-nonce'; }
+    }
+    if ( ! function_exists( 'admin_url' ) ) {
+        function admin_url( $path = '' ) { return 'https://example.com/wp-admin/' . $path; }
+    }
+    if ( ! function_exists( 'wp_parse_url' ) ) {
+        function wp_parse_url( $url, $component = -1 ) {
+            return parse_url( $url, $component );
+        }
+    }
+    if ( ! function_exists( 'sanitize_url' ) ) {
+        function sanitize_url( $url ) {
+            return filter_var( $url, FILTER_SANITIZE_URL );
+        }
+    }
+    if ( ! function_exists( 'is_wp_error' ) ) {
+        function is_wp_error( $thing ) { return false; }
+    }
+
+    // Load the Calendar Feed PHP code.
+    require_once dirname( __DIR__ ) . '/src/blocks/calendar-feed/calendar-feed.php';
 }

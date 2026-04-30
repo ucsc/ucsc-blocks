@@ -1,5 +1,5 @@
 /**
- * Frontend JavaScript for the ICS Calendar block.
+ * Frontend JavaScript for the Calendar Feed block.
  *
  * No interactive behaviour needed — events are not linked.
  */

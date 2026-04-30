@@ -1,12 +1,12 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "ucsc/ics-calendar",
+	"name": "ucsc/calendar-feed",
 	"version": "0.1.0",
-	"title": "ICS Calendar",
+	"title": "Calendar Feed",
 	"category": "widgets",
 	"icon": "calendar",
-	"description": "Fetch and display events from an ICS/iCal feed URL.",
+	"description": "Display upcoming events from an ICS/iCal calendar feed.",
 	"example": {
 		"attributes": {
 			"feedUrl": "https://example.com/calendar.ics",

@@ -1,6 +1,6 @@
 <?php
 /**
- * Server-side functions for the ICS Calendar block.
+ * Server-side functions for the Calendar Feed block.
  *
  * Handles ICS feed fetching, parsing VEVENT data, caching with transients,
  * and AJAX cache-clearing.
@@ -13,26 +13,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Enqueue editor scripts for the ICS Calendar block
+ * Enqueue editor scripts for the Calendar Feed block
  */
-function ucsc_ics_calendar_enqueue_block_editor_assets() {
+function ucsc_calendar_feed_enqueue_block_editor_assets() {
     wp_localize_script(
-        'ucsc-ics-calendar-editor-script',
-        'ucscIcsCalendarData',
+        'ucsc-calendar-feed-editor-script',
+        'ucscCalendarFeedData',
         array(
-            'nonce'   => wp_create_nonce( 'ucsc_ics_calendar_nonce' ),
+            'nonce'   => wp_create_nonce( 'ucsc_calendar_feed_nonce' ),
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         )
     );
 }
-add_action( 'enqueue_block_editor_assets', 'ucsc_ics_calendar_enqueue_block_editor_assets' );
+add_action( 'enqueue_block_editor_assets', 'ucsc_calendar_feed_enqueue_block_editor_assets' );
 
 /**
  * Get the HTML elements allowed in event descriptions.
  *
  * @return array Allowed HTML tags and attributes for wp_kses().
  */
-function ucsc_ics_allowed_description_html() {
+function ucsc_calendar_feed_allowed_description_html() {
     return array(
         'a'  => array(
             'href'   => true,
@@ -59,7 +59,7 @@ function ucsc_ics_allowed_description_html() {
  * @param string $ics_content Raw ICS file content.
  * @return array Array of associative arrays with event data.
  */
-function ucsc_ics_parse( $ics_content ) {
+function ucsc_calendar_feed_parse( $ics_content ) {
     if ( empty( $ics_content ) ) {
         return array();
     }
@@ -127,10 +127,10 @@ function ucsc_ics_parse( $ics_content ) {
                 $event['summary'] = $value_part;
                 break;
             case 'DTSTART':
-                $event['dtstart'] = ucsc_ics_parse_datetime( $value_part );
+                $event['dtstart'] = ucsc_calendar_feed_parse_datetime( $value_part );
                 break;
             case 'DTEND':
-                $event['dtend'] = ucsc_ics_parse_datetime( $value_part );
+                $event['dtend'] = ucsc_calendar_feed_parse_datetime( $value_part );
                 break;
             case 'LOCATION':
                 $event['location'] = $value_part;
@@ -161,7 +161,7 @@ function ucsc_ics_parse( $ics_content ) {
  * @param string $dt ICS datetime value.
  * @return int Unix timestamp, or 0 on failure.
  */
-function ucsc_ics_parse_datetime( $dt ) {
+function ucsc_calendar_feed_parse_datetime( $dt ) {
     $dt = trim( $dt );
 
     // All-day date: YYYYMMDD
@@ -203,7 +203,7 @@ function ucsc_ics_parse_datetime( $dt ) {
  * @param string $url The URL to validate.
  * @return bool True if the URL is safe, false otherwise.
  */
-function ucsc_ics_validate_feed_url( $url ) {
+function ucsc_calendar_feed_validate_feed_url( $url ) {
     // Must be a valid URL.
     if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
         return false;
@@ -244,7 +244,7 @@ function ucsc_ics_validate_feed_url( $url ) {
 /**
  * Maximum allowed ICS response body size in bytes (2 MB).
  */
-define( 'UCSC_ICS_MAX_BODY_SIZE', 2 * 1024 * 1024 );
+define( 'UCSC_CALENDAR_FEED_MAX_BODY_SIZE', 2 * 1024 * 1024 );
 
 /**
  * Fetch and parse events from an ICS feed URL.
@@ -257,7 +257,7 @@ define( 'UCSC_ICS_MAX_BODY_SIZE', 2 * 1024 * 1024 );
  * @param int    $count    Maximum number of events to return.
  * @return array Array of processed event arrays.
  */
-function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
+function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
     if ( empty( $feed_url ) ) {
         return array();
     }
@@ -266,7 +266,7 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
     $count = max( 1, min( 20, intval( $count ) ) );
 
     // Cache key is based on URL only — count is applied after retrieval.
-    $cache_key  = 'ucsc_ics_' . md5( $feed_url );
+    $cache_key  = 'ucsc_cf_' . md5( $feed_url );
     $cached     = get_transient( $cache_key );
 
     if ( false !== $cached ) {
@@ -274,8 +274,8 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
     }
 
     // Validate URL — scheme, host, and SSRF checks.
-    if ( ! ucsc_ics_validate_feed_url( $feed_url ) ) {
-        error_log( 'UCSC ICS Calendar Error: URL failed validation — ' . $feed_url );
+    if ( ! ucsc_calendar_feed_validate_feed_url( $feed_url ) ) {
+        error_log( 'UCSC Calendar Feed Error: URL failed validation — ' . $feed_url );
         return array();
     }
 
@@ -283,7 +283,7 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
     $response = wp_remote_get( $feed_url, array(
         'timeout'   => 10,
         'headers'   => array(
-            'User-Agent' => 'UCSC ICS Calendar Block/1.0',
+            'User-Agent' => 'UCSC Calendar Feed Block/1.0',
             'Accept'     => 'text/calendar, text/plain, */*',
         ),
         'sslverify' => true,
@@ -292,59 +292,62 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
     ) );
 
     if ( is_wp_error( $response ) ) {
-        error_log( 'UCSC ICS Calendar Error: ' . $response->get_error_message() );
+        error_log( 'UCSC Calendar Feed Error: ' . $response->get_error_message() );
         return array();
     }
 
     $response_code = wp_remote_retrieve_response_code( $response );
     if ( $response_code !== 200 ) {
-        error_log( 'UCSC ICS Calendar Error: HTTP ' . $response_code );
+        error_log( 'UCSC Calendar Feed Error: HTTP ' . $response_code );
         return array();
     }
 
     $body = wp_remote_retrieve_body( $response );
 
     // Enforce a maximum body size to prevent memory exhaustion.
-    if ( strlen( $body ) > UCSC_ICS_MAX_BODY_SIZE ) {
-        error_log( 'UCSC ICS Calendar Error: Response body exceeds ' . UCSC_ICS_MAX_BODY_SIZE . ' bytes' );
+    if ( strlen( $body ) > UCSC_CALENDAR_FEED_MAX_BODY_SIZE ) {
+        error_log( 'UCSC Calendar Feed Error: Response body exceeds ' . UCSC_CALENDAR_FEED_MAX_BODY_SIZE . ' bytes' );
         return array();
     }
 
     // Basic sanity check — must contain VCALENDAR
     if ( strpos( $body, 'BEGIN:VCALENDAR' ) === false ) {
-        error_log( 'UCSC ICS Calendar Error: Response does not appear to be a valid ICS feed' );
+        error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid ICS feed' );
         return array();
     }
 
     // Parse events
-    $raw_events = ucsc_ics_parse( $body );
+    $raw_events = ucsc_calendar_feed_parse( $body );
 
     if ( empty( $raw_events ) ) {
         return array();
     }
 
-    $now    = time();
+    // Use the start of today (site timezone) as the cutoff so that
+    // events starting earlier today are still displayed.
+    $today  = ( new DateTime( 'today', wp_timezone() ) )->getTimestamp();
     $events = array();
 
     foreach ( $raw_events as $raw ) {
         $start = $raw['dtstart'];
         $end   = $raw['dtend'];
 
-        // Skip events that have already ended (or started in the past with no end)
-        if ( $end && $end < $now ) {
-            continue;
-        }
-        if ( ! $end && $start && $start < $now ) {
+        // Skip events that are entirely in the past.  An event is kept
+        // when it starts today-or-later, OR when it started earlier but
+        // its end date is still today-or-later (multi-day / in-progress).
+        $dominated_by_past = $start && $start < $today;
+        $still_running     = $end && $end >= $today;
+
+        if ( $dominated_by_past && ! $still_running ) {
             continue;
         }
 
-        // Format date for display
+        // Format date for display.
         $date_display = '';
         if ( $start ) {
             $date_format = get_option( 'date_format' );
             $time_format = get_option( 'time_format' );
 
-            // Check if this is an all-day event (time is midnight and no end or end is also midnight)
             $start_dt  = new DateTime( '@' . $start );
             $is_allday = ( $start_dt->format( 'H:i:s' ) === '00:00:00' );
 
@@ -353,6 +356,27 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
             } else {
                 $date_display = date_i18n( $date_format . ' ' . $time_format, $start );
             }
+
+            // Show a date range when the event spans multiple days.
+            if ( $end && $end > $start ) {
+                $end_dt       = new DateTime( '@' . $end );
+                $end_is_allday = ( $end_dt->format( 'H:i:s' ) === '00:00:00' );
+
+                // For all-day ranges the DTEND is exclusive (the day *after*
+                // the last day), so subtract one day for display.
+                if ( $is_allday && $end_is_allday ) {
+                    $last_day = clone $end_dt;
+                    $last_day->modify( '-1 day' );
+
+                    // Only show a range if start and (inclusive) end differ.
+                    if ( $start_dt->format( 'Ymd' ) !== $last_day->format( 'Ymd' ) ) {
+                        $date_display .= ' – ' . date_i18n( $date_format, $last_day->getTimestamp() );
+                    }
+                } elseif ( $start_dt->format( 'Ymd' ) !== $end_dt->format( 'Ymd' ) ) {
+                    // Timed event that crosses midnight into another day.
+                    $date_display .= ' – ' . date_i18n( $date_format . ' ' . $time_format, $end );
+                }
+            }
         }
 
         // Sanitize text fields from the ICS feed.
@@ -360,7 +384,7 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
         $location = sanitize_text_field( $raw['location'] );
         $desc     = wp_kses(
             $raw['description'],
-            ucsc_ics_allowed_description_html(),
+            ucsc_calendar_feed_allowed_description_html(),
             array( 'http', 'https' )
         );
 
@@ -395,10 +419,10 @@ function ucsc_ics_fetch_events( $feed_url, $count = 5 ) {
 }
 
 /**
- * AJAX handler: clear ICS calendar cache.
+ * AJAX handler: clear calendar feed cache.
  */
-function ucsc_ics_calendar_clear_cache() {
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_ics_calendar_nonce' ) ) {
+function ucsc_calendar_feed_clear_cache() {
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_calendar_feed_nonce' ) ) {
         wp_send_json_error( array( 'message' => 'Security check failed' ) );
         return;
     }
@@ -411,7 +435,7 @@ function ucsc_ics_calendar_clear_cache() {
     $feed_url = isset( $_POST['feed_url'] ) ? sanitize_url( $_POST['feed_url'] ) : '';
 
     if ( ! empty( $feed_url ) ) {
-        $cache_key = 'ucsc_ics_' . md5( $feed_url );
+        $cache_key = 'ucsc_cf_' . md5( $feed_url );
         delete_transient( $cache_key );
 
         wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
@@ -419,13 +443,13 @@ function ucsc_ics_calendar_clear_cache() {
         wp_send_json_error( array( 'message' => 'Invalid feed URL' ) );
     }
 }
-add_action( 'wp_ajax_ucsc_ics_calendar_clear_cache', 'ucsc_ics_calendar_clear_cache' );
+add_action( 'wp_ajax_ucsc_calendar_feed_clear_cache', 'ucsc_calendar_feed_clear_cache' );
 
 /**
  * AJAX handler: return parsed ICS events as JSON for the editor preview.
  */
-function ucsc_ics_calendar_preview() {
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_ics_calendar_nonce' ) ) {
+function ucsc_calendar_feed_preview() {
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_calendar_feed_nonce' ) ) {
         wp_send_json_error( array( 'message' => 'Security check failed' ) );
         return;
     }
@@ -444,12 +468,12 @@ function ucsc_ics_calendar_preview() {
         return;
     }
 
-    if ( ! ucsc_ics_validate_feed_url( $feed_url ) ) {
+    if ( ! ucsc_calendar_feed_validate_feed_url( $feed_url ) ) {
         wp_send_json_error( array( 'message' => 'Invalid or disallowed feed URL. Only public HTTPS URLs are accepted.' ) );
         return;
     }
 
-    $events = ucsc_ics_fetch_events( $feed_url, $item_count );
+    $events = ucsc_calendar_feed_fetch_events( $feed_url, $item_count );
     wp_send_json_success( $events );
 }
-add_action( 'wp_ajax_ucsc_ics_calendar_preview', 'ucsc_ics_calendar_preview' );
+add_action( 'wp_ajax_ucsc_calendar_feed_preview', 'ucsc_calendar_feed_preview' );

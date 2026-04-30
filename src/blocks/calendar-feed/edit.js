@@ -1,5 +1,5 @@
 /**
- * Edit component for the ICS Calendar block.
+ * Edit component for the Calendar Feed block.
  *
  * Provides the editor UI: feed URL input, event count slider,
  * layout picker, live preview via the REST API proxy, and
@@ -57,7 +57,7 @@ export default function Edit( { attributes, setAttributes } ) {
     }, [ feedUrl ] );
 
     /**
-     * Fetch ICS data for the editor preview.
+     * Fetch calendar feed data for the editor preview.
      *
      * Uses the WP AJAX endpoint which runs the server-side parser,
      * so the preview matches what render.php will produce.
@@ -77,13 +77,13 @@ export default function Edit( { attributes, setAttributes } ) {
             }
 
             const formData = new FormData();
-            formData.append( 'action', 'ucsc_ics_calendar_preview' );
+            formData.append( 'action', 'ucsc_calendar_feed_preview' );
             formData.append( 'feed_url', feedUrl );
             formData.append( 'item_count', 20 );
-            formData.append( 'nonce', window.ucscIcsCalendarData?.nonce || '' );
+            formData.append( 'nonce', window.ucscCalendarFeedData?.nonce || '' );
 
             const response = await fetch(
-                window.ucscIcsCalendarData?.ajaxUrl || '/wp-admin/admin-ajax.php',
+                window.ucscCalendarFeedData?.ajaxUrl || '/wp-admin/admin-ajax.php',
                 {
                     method: 'POST',
                     body: formData,
@@ -117,12 +117,12 @@ export default function Edit( { attributes, setAttributes } ) {
 
         try {
             const formData = new FormData();
-            formData.append( 'action', 'ucsc_ics_calendar_clear_cache' );
+            formData.append( 'action', 'ucsc_calendar_feed_clear_cache' );
             formData.append( 'feed_url', feedUrl );
-            formData.append( 'nonce', window.ucscIcsCalendarData?.nonce || '' );
+            formData.append( 'nonce', window.ucscCalendarFeedData?.nonce || '' );
 
             const response = await fetch(
-                window.ucscIcsCalendarData?.ajaxUrl || '/wp-admin/admin-ajax.php',
+                window.ucscCalendarFeedData?.ajaxUrl || '/wp-admin/admin-ajax.php',
                 {
                     method: 'POST',
                     body: formData,
@@ -148,14 +148,14 @@ export default function Edit( { attributes, setAttributes } ) {
     };
 
     const renderEventItem = ( event, index ) => (
-        <div key={ index } className="ucsc-ics-event-item">
-            <div className="ucsc-ics-event-content">
-                <h3 className="ucsc-ics-event-title">{ event.title }</h3>
+        <li key={ index } className="ucsc-cf-event-item">
+            <div className="ucsc-cf-event-content">
+                <p className="ucsc-cf-event-title">{ event.title }</p>
                 { event.date && (
-                    <div className="ucsc-ics-event-date">{ event.date }</div>
+                    <div className="ucsc-cf-event-date">{ event.date }</div>
                 ) }
                 { event.location && (
-                    <div className="ucsc-ics-event-location">
+                    <div className="ucsc-cf-event-location">
                         { ( () => {
                             try {
                                 const u = new URL( event.location );
@@ -172,12 +172,12 @@ export default function Edit( { attributes, setAttributes } ) {
                     </div>
                 ) }
                 { event.description && (
-                    <RawHTML className="ucsc-ics-event-description">
+                    <RawHTML className="ucsc-cf-event-description">
                         { event.description }
                     </RawHTML>
                 ) }
             </div>
-        </div>
+        </li>
     );
 
     return (
@@ -220,7 +220,7 @@ export default function Edit( { attributes, setAttributes } ) {
                         help={ __( 'Choose how events should be displayed', 'ucsc-blocks' ) }
                     />
 
-                    <div className="ucsc-ics-cache-controls">
+                    <div className="ucsc-cf-cache-controls">
                         <Button
                             variant="secondary"
                             onClick={ clearCache }
@@ -240,9 +240,9 @@ export default function Edit( { attributes, setAttributes } ) {
 
             <div { ...blockProps }>
                 { ! feedUrl && (
-                    <div className="ucsc-ics-placeholder">
-                        <div className="ucsc-ics-placeholder-content">
-                            <h3>{ __( 'ICS Calendar', 'ucsc-blocks' ) }</h3>
+                    <div className="ucsc-cf-placeholder">
+                        <div className="ucsc-cf-placeholder-content">
+                            <h3>{ __( 'Calendar Feed', 'ucsc-blocks' ) }</h3>
                             <p>
                                 { __( 'Enter an ICS feed URL in the block settings to display upcoming events.', 'ucsc-blocks' ) }
                             </p>
@@ -251,7 +251,7 @@ export default function Edit( { attributes, setAttributes } ) {
                 ) }
 
                 { feedUrl && isLoading && (
-                    <div className="ucsc-ics-loading">
+                    <div className="ucsc-cf-loading">
                         <Spinner />
                         <span>{ __( 'Loading events…', 'ucsc-blocks' ) }</span>
                     </div>
@@ -270,9 +270,9 @@ export default function Edit( { attributes, setAttributes } ) {
                 ) }
 
                 { feedUrl && ! isLoading && ! error && previewData.length > 0 && (
-                    <div className="ucsc-ics-events-list">
+                    <ol className="ucsc-cf-events-list">
                         { previewData.slice( 0, itemCount ).map( renderEventItem ) }
-                    </div>
+                    </ol>
                 ) }
             </div>
         </>

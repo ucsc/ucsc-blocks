@@ -62,8 +62,8 @@ describe( 'icsParse', () => {
 		events = icsParse( ICS_CONTENT );
 	} );
 
-	it( 'extracts all 13 VEVENT blocks', () => {
-		expect( events ).toHaveLength( 13 );
+	it( 'extracts all 43 VEVENT blocks', () => {
+		expect( events ).toHaveLength( 43 );
 	} );
 
 	it( 'parses the first event summary', () => {
@@ -106,7 +106,7 @@ describe( 'icsParse', () => {
 	it( 'parses UTC DTSTART to a valid timestamp', () => {
 		expect( events[ 0 ].dtstart ).toBeGreaterThan( 0 );
 		const d = new Date( events[ 0 ].dtstart * 1000 );
-		expect( d.toISOString() ).toMatch( /^2026-04-01T09:00/ );
+		expect( d.toISOString() ).toMatch( /^2026-03-15T09:00/ );
 	} );
 
 	it( 'parses TZID DTSTART to a valid timestamp', () => {

@@ -7,21 +7,21 @@ X-WR-CALNAME:UCSC Test Calendar
 X-WR-TIMEZONE:America/Los_Angeles
 
 BEGIN:VEVENT
-DTSTART:20260401T090000Z
-DTEND:20260401T103000Z
-DTSTAMP:20260301T120000Z
+DTSTART:20260315T090000Z
+DTEND:20260315T103000Z
+DTSTAMP:20260201T120000Z
 UID:evt-001@ucsc-test
 SUMMARY:Spring Quarter Orientation
 DESCRIPTION:Welcome session for new students.\nIncludes campus tour and lunch.
 LOCATION:Stevenson Event Center\, UC Santa Cruz
-URL:https://events.ucsc.edu/orientation-spring-2026
+URL:https://events.ucsc.edu/orientation-spring
 STATUS:CONFIRMED
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;TZID=America/Los_Angeles:20260405T140000
-DTEND;TZID=America/Los_Angeles:20260405T160000
-DTSTAMP:20260301T120000Z
+DTSTART;TZID=America/Los_Angeles:20270405T140000
+DTEND;TZID=America/Los_Angeles:20270405T160000
+DTSTAMP:20270301T120000Z
 UID:evt-002@ucsc-test
 SUMMARY:Faculty Research Symposium: "AI & Ethics in Higher Education"
 DESCRIPTION:Panel discussion featuring faculty from Computer Science\, Phil
@@ -33,9 +33,9 @@ STATUS:CONFIRMED
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;VALUE=DATE:20260410
-DTEND;VALUE=DATE:20260411
-DTSTAMP:20260301T120000Z
+DTSTART;VALUE=DATE:20270410
+DTEND;VALUE=DATE:20270411
+DTSTAMP:20270301T120000Z
 UID:evt-003@ucsc-test
 SUMMARY:Admissions Open House (All Day)
 DESCRIPTION:Prospective students and families are invited to explore campus. No registration required.
@@ -44,21 +44,21 @@ URL:https://admissions.ucsc.edu/open-house
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART:20260415T180000Z
-DTEND:20260415T200000Z
-DTSTAMP:20260301T120000Z
+DTSTART:20270415T180000Z
+DTEND:20270415T200000Z
+DTSTAMP:20270301T120000Z
 UID:evt-004@ucsc-test
 SUMMARY:Concert: Santa Cruz Chamber Players
 DESCRIPTION:Program includes works by Beethoven\; Debussy\; and Caroline Shaw.
 LOCATION:Music Center Recital Hall
 URL:https://arts.ucsc.edu/chamber-players-spring
-ATTACH;FMTTYPE=image/jpeg:https://arts.ucsc.edu/images/chamber-spring-2026.jpg
+ATTACH;FMTTYPE=image/jpeg:https://arts.ucsc.edu/images/chamber-spring.jpg
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;TZID=America/Los_Angeles:20260420T100000
-DTEND;TZID=America/Los_Angeles:20260420T120000
-DTSTAMP:20260301T120000Z
+DTSTART;TZID=America/Los_Angeles:20270420T100000
+DTEND;TZID=America/Los_Angeles:20270420T120000
+DTSTAMP:20270301T120000Z
 UID:evt-005@ucsc-test
 SUMMARY:Banana Slug Spring Fair
 DESCRIPTION:Annual alumni weekend celebration with food\, music\, and campus reunions.
@@ -68,9 +68,9 @@ IMAGE;VALUE=URI;DISPLAY=BADGE:https://alumni.ucsc.edu/images/bssf-badge.png
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART:20260422T230000Z
-DTEND:20260423T010000Z
-DTSTAMP:20260301T120000Z
+DTSTART:20270422T230000Z
+DTEND:20270423T010000Z
+DTSTAMP:20270301T120000Z
 UID:evt-006@ucsc-test
 SUMMARY:Astronomy Night: Lick Observatory Public Viewing
 DESCRIPTION:Open telescope viewing (weather permitting).\nMeet at the main observatory parking lot by 10:45 PM.
@@ -78,9 +78,9 @@ LOCATION:Lick Observatory\, Mt. Hamilton
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;TZID=America/New_York:20260501T120000
-DTEND;TZID=America/New_York:20260501T130000
-DTSTAMP:20260301T120000Z
+DTSTART;TZID=America/New_York:20270501T120000
+DTEND;TZID=America/New_York:20270501T130000
+DTSTAMP:20270301T120000Z
 UID:evt-007@ucsc-test
 SUMMARY:Webinar — Grant Writing for Early-Career Researchers
 DESCRIPTION:Online workshop. Zoom link will be emailed to registrants 24 hours before the event.
@@ -89,11 +89,11 @@ URL:https://research.ucsc.edu/grant-writing-webinar
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;VALUE=DATE:20260612
-DTEND;VALUE=DATE:20260614
-DTSTAMP:20260301T120000Z
+DTSTART;VALUE=DATE:20270612
+DTEND;VALUE=DATE:20270614
+DTSTAMP:20270301T120000Z
 UID:evt-008@ucsc-test
-SUMMARY:Commencement Weekend 2026
+SUMMARY:Commencement Weekend 2027
 DESCRIPTION:Ceremonies for all colleges and divisions. Detailed schedule at commencement.ucsc.edu.
 LOCATION:Upper East Field & College Plazas
 URL:https://commencement.ucsc.edu
@@ -110,9 +110,9 @@ LOCATION:Nowhere
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;TZID=America/Los_Angeles:20260418T083000
-DTEND;TZID=America/Los_Angeles:20260418T093000
-DTSTAMP:20260301T120000Z
+DTSTART;TZID=America/Los_Angeles:20270418T083000
+DTEND;TZID=America/Los_Angeles:20270421T093000
+DTSTAMP:20270301T120000Z
 UID:evt-010@ucsc-test
 SUMMARY:Café & Croissants: Grad Student Social ☕
 DESCRIPTION:Informal morning meetup at the Graduate Commons.\nFree coffee\, pastries\, & good company — all grad students welcome!
@@ -120,9 +120,9 @@ LOCATION:Graduate Student Commons\, Hahn Building
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART:20260425T170000Z
-DTEND:20260425T190000Z
-DTSTAMP:20260301T120000Z
+DTSTART:20270425T170000Z
+DTEND:20270430T190000Z
+DTSTAMP:20270301T120000Z
 UID:evt-011@ucsc-test
 SUMMARY:
 DESCRIPTION:An event with no title to test the "Untitled Event" fallback.
@@ -130,8 +130,8 @@ LOCATION:TBD
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART:20260430T160000Z
-DTSTAMP:20260301T120000Z
+DTSTART:20270430T160000Z
+DTSTAMP:20270301T120000Z
 UID:evt-012@ucsc-test
 SUMMARY:Drop-In Office Hours (No End Time)
 DESCRIPTION:Open office hours with the Dean of Students. No appointment needed. This event has no DTEND property.
@@ -140,17 +140,331 @@ URL:https://deanofstudents.ucsc.edu/office-hours
 END:VEVENT
 
 BEGIN:VEVENT
-DTSTART;TZID=America/Los_Angeles:20260507T110000
-DTEND;TZID=America/Los_Angeles:20260507T120000
-DTSTAMP:20260301T120000Z
+DTSTART;TZID=America/Los_Angeles:20270507T110000
+DTEND;TZID=America/Los_Angeles:20270507T120000
+DTSTAMP:20270301T120000Z
 UID:evt-013@ucsc-test
 SUMMARY:Dissertation Defense: Maria Chen — Coastal Erosion Modeling
 DESCRIPTION:Join via Zoom (passcode: 839201). Committee: Dr. Patel (chair)
  \, Dr. Okafor\, Dr. Lindström.\nPublic attendees may observe but should rem
  ain muted during Q&A.
 LOCATION:https://ucsc.zoom.us/j/98765432100?pwd=xYzAbCdEfG
-URL:https://graddiv.ucsc.edu/defenses/chen-2026
+URL:https://graddiv.ucsc.edu/defenses/chen-2027
 CONFERENCE;VALUE=URI:https://ucsc.zoom.us/j/98765432100?pwd=xYzAbCdEfG
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270601T170000Z
+DTEND:20270601T190000Z
+DTSTAMP:20270301T120000Z
+UID:evt-014@ucsc-test
+SUMMARY:Summer Research Kick-Off
+DESCRIPTION:Orientation for <b>all summer research fellows</b>.\nMeet your mentors and tour the labs.
+LOCATION:Physical Sciences Building\, Room 114
+URL:https://research.ucsc.edu/summer-kickoff
+STATUS:CONFIRMED
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270605T090000
+DTEND;TZID=America/Los_Angeles:20270605T120000
+DTSTAMP:20270301T120000Z
+UID:evt-015@ucsc-test
+SUMMARY:Library Workshop: Zotero & Citation Management
+DESCRIPTION:Learn how to use <a href="https://www.zotero.org">Zotero</a> for managing your research bibliography.\nBring your laptop.
+LOCATION:McHenry Library\, Digital Scholarship Commons
+URL:https://library.ucsc.edu/workshops/zotero
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270608T140000Z
+DTEND:20270608T153000Z
+DTSTAMP:20270301T120000Z
+UID:evt-016@ucsc-test
+SUMMARY:Staff Appreciation Luncheon
+DESCRIPTION:Join us for a <i>special afternoon</i> celebrating our dedicated staff members.\nCatered lunch provided.
+LOCATION:Quarry Amphitheater
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270615
+DTEND;VALUE=DATE:20270616
+DTSTAMP:20270301T120000Z
+UID:evt-017@ucsc-test
+SUMMARY:Juneteenth Celebration & Teach-In
+DESCRIPTION:A day of reflection\, education\, and community. Keynote by <b>Dr. Angela Thompson</b>.\nOpen to all.
+LOCATION:Kresge Town Hall
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270620T180000
+DTEND;TZID=America/Los_Angeles:20270620T210000
+DTSTAMP:20270301T120000Z
+UID:evt-018@ucsc-test
+SUMMARY:Outdoor Movie Night: The Wizard of Oz
+DESCRIPTION:Bring blankets and snacks for a screening under the stars.\nFree popcorn while supplies last.
+LOCATION:Porter Meadow
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270622T160000Z
+DTEND:20270622T173000Z
+DTSTAMP:20270301T120000Z
+UID:evt-019@ucsc-test
+SUMMARY:Ocean Health Seminar Series
+DESCRIPTION:This week: <u>Microplastics in Monterey Bay</u> — new findings from the Coastal Science Lab.\nPresented by Dr. Reyes.
+LOCATION:Long Marine Lab\, Seymour Center
+URL:https://oceansci.ucsc.edu/seminars
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270625T100000
+DTEND;TZID=America/Los_Angeles:20270625T113000
+DTSTAMP:20270301T120000Z
+UID:evt-020@ucsc-test
+SUMMARY:Yoga on the Meadow
+DESCRIPTION:All levels welcome. Mats provided.\nInstructor: Jamie Reeves.
+LOCATION:Oakes Meadow
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270628T180000Z
+DTEND:20270628T200000Z
+DTSTAMP:20270301T120000Z
+UID:evt-021@ucsc-test
+SUMMARY:Pride Celebration & Resource Fair
+DESCRIPTION:Celebrate Pride Month with music\, food\, and community resources from the <a href="https://cantu.ucsc.edu">Cantú Queer Center</a>.
+LOCATION:Quarry Plaza
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270701
+DTEND;VALUE=DATE:20270702
+DTSTAMP:20270301T120000Z
+UID:evt-022@ucsc-test
+SUMMARY:Independence Day — Campus Closed
+DESCRIPTION:Campus offices closed for the <b>Independence Day</b> holiday. Classes resume July 2.
+LOCATION:UC Santa Cruz (all buildings)
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270706T130000
+DTEND;TZID=America/Los_Angeles:20270706T150000
+DTSTAMP:20270301T120000Z
+UID:evt-023@ucsc-test
+SUMMARY:Wildfire Preparedness Town Hall
+DESCRIPTION:Presentation by <b>Cal Fire</b> and campus emergency management.\nLearn about evacuation routes and alert systems.
+LOCATION:Stevenson Event Center
+URL:https://ehs.ucsc.edu/wildfire-prep
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270710T170000Z
+DTEND:20270710T190000Z
+DTSTAMP:20270301T120000Z
+UID:evt-024@ucsc-test
+SUMMARY:Genome Assembly Hackathon
+DESCRIPTION:Drop-in coding session focused on <i>de novo</i> genome assembly pipelines.\nBYO laptop\; pizza provided.
+LOCATION:Jack Baskin Engineering\, Room 156
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270714T090000
+DTEND;TZID=America/Los_Angeles:20270714T100000
+DTSTAMP:20270301T120000Z
+UID:evt-025@ucsc-test
+SUMMARY:New Employee Orientation
+DESCRIPTION:Required session for all new hires. Covers benefits\, campus policies\, and IT setup.\nSee <a href="https://shr.ucsc.edu/neo">shr.ucsc.edu/neo</a> for details.
+LOCATION:Bay Tree Building\, Conference Room D
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270718T150000Z
+DTEND:20270718T163000Z
+DTSTAMP:20270301T120000Z
+UID:evt-026@ucsc-test
+SUMMARY:Data Visualization Brown Bag
+DESCRIPTION:Informal talk on best practices for <u>accessible chart design</u>.\nBring your own lunch.
+LOCATION:Digital Arts Research Center\, Room 108
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270720
+DTEND;VALUE=DATE:20270724
+DTSTAMP:20270301T120000Z
+UID:evt-027@ucsc-test
+SUMMARY:Summer Orientation for Incoming Freshmen
+DESCRIPTION:Multi-day program: advising\, registration\, and social events.\nParent & family sessions available.
+LOCATION:Various campus locations
+URL:https://orientation.ucsc.edu/summer
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270726T190000
+DTEND;TZID=America/Los_Angeles:20270726T210000
+DTSTAMP:20270301T120000Z
+UID:evt-028@ucsc-test
+SUMMARY:Shakespeare Santa Cruz: A Midsummer Night's Dream
+DESCRIPTION:Opening night of the <i>beloved comedy</i> performed in the Festival Glen.\nTickets at <a href="https://shakespearesantacruz.org">shakespearesantacruz.org</a>.
+LOCATION:Festival Glen\, UC Santa Cruz
+URL:https://shakespearesantacruz.org/midsummer
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270730T160000Z
+DTEND:20270730T170000Z
+DTSTAMP:20270301T120000Z
+UID:evt-029@ucsc-test
+SUMMARY:Ask the Chancellor: Open Forum
+DESCRIPTION:Bring your questions to this <b>open Q&A session</b> with Chancellor Larive.\nNo RSVP required.
+LOCATION:Colleges Nine & Ten Multipurpose Room
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270803T100000
+DTEND;TZID=America/Los_Angeles:20270803T120000
+DTSTAMP:20270301T120000Z
+UID:evt-030@ucsc-test
+SUMMARY:Farm & Garden Volunteer Day
+DESCRIPTION:Help with summer harvesting and bed preparation.\nGloves and tools provided; wear closed-toe shoes.
+LOCATION:UCSC Farm\, Chadwick Garden
+URL:https://casfs.ucsc.edu/volunteer
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270806T180000Z
+DTEND:20270806T200000Z
+DTSTAMP:20270301T120000Z
+UID:evt-031@ucsc-test
+SUMMARY:Slug Startup Pitch Night
+DESCRIPTION:Watch student entrepreneurs pitch their ventures to a panel of <b>Silicon Valley</b> investors.\nFree admission.
+LOCATION:University Center\, Bhojwani Dining Room
+URL:https://entrepreneurship.ucsc.edu/pitch-night
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270810T140000
+DTEND;TZID=America/Los_Angeles:20270810T160000
+DTSTAMP:20270301T120000Z
+UID:evt-032@ucsc-test
+SUMMARY:Graduate Writing Retreat
+DESCRIPTION:Dedicated writing time with optional feedback sessions. Coffee & snacks included.\nBring your <i>work in progress</i>.
+LOCATION:Humanities 1\, Graduate Lounge
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270815T170000Z
+DTEND:20270815T190000Z
+DTSTAMP:20270301T120000Z
+UID:evt-033@ucsc-test
+SUMMARY:Solar Eclipse Viewing Party
+DESCRIPTION:Campus telescopes and eclipse glasses available.\n<b>Do NOT look at the sun without protection.</b>
+LOCATION:Science Hill\, Interdisciplinary Sciences Building
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270820
+DTEND;VALUE=DATE:20270821
+DTSTAMP:20270301T120000Z
+UID:evt-034@ucsc-test
+SUMMARY:Transfer Student Welcome Day
+DESCRIPTION:Information sessions\, peer mentoring meet-ups\, and resource fair for <u>new transfer students</u>.
+LOCATION:College Nine/John R. Lewis College
+URL:https://admissions.ucsc.edu/transfer-welcome
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270824T110000
+DTEND;TZID=America/Los_Angeles:20270824T123000
+DTSTAMP:20270301T120000Z
+UID:evt-035@ucsc-test
+SUMMARY:Arboretum Guided Tour: California Natives
+DESCRIPTION:Docent-led walk through the <i>California Native Plant</i> garden.\nFree with campus ID.
+LOCATION:UCSC Arboretum & Botanic Garden
+URL:https://arboretum.ucsc.edu/tours
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270828T150000Z
+DTEND:20270828T163000Z
+DTSTAMP:20270301T120000Z
+UID:evt-036@ucsc-test
+SUMMARY:IT Security Awareness Training
+DESCRIPTION:Required annual training for all employees. Learn about <a href="https://its.ucsc.edu/phishing">phishing prevention</a> and data handling.
+LOCATION:Online (Zoom)
+URL:https://its.ucsc.edu/security-training
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270901T090000
+DTEND;TZID=America/Los_Angeles:20270901T170000
+DTSTAMP:20270301T120000Z
+UID:evt-037@ucsc-test
+SUMMARY:Fall Quarter Move-In Day
+DESCRIPTION:Residence halls open at 9 AM. Volunteers will help with unloading.\nSee <a href="https://housing.ucsc.edu/movein">housing.ucsc.edu/movein</a> for your assigned time slot.
+LOCATION:All Residential Colleges
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270903T180000Z
+DTEND:20270903T200000Z
+DTSTAMP:20270301T120000Z
+UID:evt-038@ucsc-test
+SUMMARY:Welcome Back BBQ
+DESCRIPTION:Kick off fall quarter with free food\, lawn games\, and live music at the <b>annual Welcome Back BBQ</b>.
+LOCATION:East Field
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270908T160000
+DTEND;TZID=America/Los_Angeles:20270908T173000
+DTSTAMP:20270301T120000Z
+UID:evt-039@ucsc-test
+SUMMARY:Career Fair: Tech & Engineering
+DESCRIPTION:Meet recruiters from 50+ companies.\nBring your resume. <u>Business casual recommended.</u>
+LOCATION:West Field House
+URL:https://careers.ucsc.edu/tech-fair
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270912T170000Z
+DTEND:20270912T190000Z
+DTSTAMP:20270301T120000Z
+UID:evt-040@ucsc-test
+SUMMARY:Slug Film Festival: Student Shorts
+DESCRIPTION:Screenings of student-produced short films followed by a <i>moderated panel</i> with the filmmakers.
+LOCATION:Media Theater\, Communications Building
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270915
+DTEND;VALUE=DATE:20270916
+DTSTAMP:20270301T120000Z
+UID:evt-041@ucsc-test
+SUMMARY:Día de la Independencia Celebration
+DESCRIPTION:Cultural performances\, traditional food\, and educational displays honoring Mexican independence.
+LOCATION:Oakes College Lawn
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=America/Los_Angeles:20270920T100000
+DTEND;TZID=America/Los_Angeles:20270920T113000
+DTSTAMP:20270301T120000Z
+UID:evt-042@ucsc-test
+SUMMARY:Sustainability Summit
+DESCRIPTION:Workshops on <b>zero-waste campus initiatives</b> and renewable energy.\nKeynote by <i>Dr. Kim Stanley Robinson</i>.
+LOCATION:Stevenson Event Center
+URL:https://sustainability.ucsc.edu/summit
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART:20270925T180000Z
+DTEND:20270925T200000Z
+DTSTAMP:20270301T120000Z
+UID:evt-043@ucsc-test
+SUMMARY:Banana Slug Trivia Night
+DESCRIPTION:Teams of up to 6. Prizes for the top three teams.\nSign up at <a href="https://events.ucsc.edu/trivia">events.ucsc.edu/trivia</a>.
+LOCATION:Terra Fresca\, Colleges Nine & Ten
 END:VEVENT
 
 END:VCALENDAR

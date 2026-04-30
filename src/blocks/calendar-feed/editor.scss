@@ -1,0 +1,25 @@
+/**
+ * Editor-only styles for the Calendar Feed block.
+ */
+
+.wp-block-ucsc-calendar-feed {
+    
+    .ucsc-cf-cache-controls {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+
+        .components-notice {
+            margin-top: 0.5rem;
+        }
+    }
+
+    .ucsc-cf-loading {
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .components-notice {
+        margin: 1rem 0;
+    }
+}
