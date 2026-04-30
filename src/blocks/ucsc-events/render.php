@@ -7,17 +7,52 @@
 $api_url = $attributes['apiUrl'] ?? '';
 $item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
+$hide_repeating = $attributes['hideRepeating'] ?? false;
 
 // Get the block wrapper attributes with layout class
 $wrapper_attributes = get_block_wrapper_attributes(array(
 	'class' => 'layout-' . esc_attr($layout_style)
 ));
 
-// Fetch events data
+// Fetch all cached events (up to 50 from the API)
 $events = array();
+$series_slugs = array();
 if (!empty($api_url)) {
 	if (function_exists('ucsc_events_fetch_data')) {
-		$events = ucsc_events_fetch_data($api_url, $item_count);
+		$events = ucsc_events_fetch_data($api_url);
+
+		// Identify slugs that appear more than once (i.e. repeating/series events).
+		// Built from the full dataset before any filtering or slicing.
+		$slug_counts = array();
+		foreach ($events as $event) {
+			$slug = $event['slug'] ?? '';
+			if (!empty($slug)) {
+				$slug_counts[$slug] = ($slug_counts[$slug] ?? 0) + 1;
+			}
+		}
+		$series_slugs = array_filter($slug_counts, function ($count) {
+			return $count > 1;
+		});
+
+		// Filter out repeating events, keeping only the nearest upcoming instance.
+		// Events are returned sorted by date, so the first occurrence of each slug wins.
+		if ($hide_repeating && !empty($events)) {
+			$seen_slugs = array();
+			$events = array_filter($events, function ($event) use (&$seen_slugs) {
+				$slug = $event['slug'] ?? '';
+				if (empty($slug)) {
+					return true;
+				}
+				if (isset($seen_slugs[$slug])) {
+					return false;
+				}
+				$seen_slugs[$slug] = true;
+				return true;
+			});
+		}
+
+		// Slice to the requested number of events
+		$events = array_slice($events, 0, $item_count);
 	}
 }
 
@@ -66,6 +101,13 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 						<?php if (!empty($event['date'])): ?>
 							<div class="ucsc-event-date">
 								<?php echo wp_kses_post($event['date']); ?>
+							</div>
+						<?php endif; ?>
+
+						<?php if (isset($series_slugs[$event['slug'] ?? ''])): ?>
+							<div class="ucsc-event-series">
+								<span class="dashicons dashicons-controls-repeat"></span>
+								<?php _e('Series', 'ucsc-events'); ?>
 							</div>
 						<?php endif; ?>
 

@@ -17,10 +17,11 @@ import { useBlockProps, InspectorControls, BlockControls } from '@wordpress/bloc
  * WordPress dependencies
  */
 import { 
-	PanelBody, 
-	TextControl, 
-	RangeControl, 
-	SelectControl, 
+	PanelBody,
+	TextControl,
+	RangeControl,
+	SelectControl,
+	ToggleControl,
 	Button,
 	Notice,
 	ToolbarGroup,
@@ -52,7 +53,7 @@ import './editor.scss';
  * @return {Element} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const { apiUrl, itemCount, layoutStyle } = attributes;
+	const { apiUrl, itemCount, layoutStyle, hideRepeating } = attributes;
 	const [previewData, setPreviewData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
@@ -68,7 +69,8 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
 	];
 
-	// Fetch preview data when API URL or item count changes (debounced)
+	// Fetch preview data when API URL changes (debounced).
+	// Always fetches 50 events; itemCount is applied locally when rendering.
 	useEffect(() => {
 		if (!apiUrl) {
 			setPreviewData([]);
@@ -76,14 +78,14 @@ export default function Edit( { attributes, setAttributes } ) {
 			return;
 		}
 
-		// Debounce API calls - wait 500ms after user stops typing
+		// Debounce API calls - wait 1s after user stops typing
 		const timeoutId = setTimeout(() => {
 			fetchPreviewData();
 		}, 1000);
 
 		// Cleanup function to cancel the timeout if apiUrl changes again
 		return () => clearTimeout(timeoutId);
-	}, [apiUrl, itemCount]);
+	}, [apiUrl]);
 
 	const fetchPreviewData = async () => {
 		if (!apiUrl) return;
@@ -100,8 +102,8 @@ export default function Edit( { attributes, setAttributes } ) {
 				throw new Error(__('Please enter a valid URL', 'ucsc-events'));
 			}
 
-			url.searchParams.set('per_page', itemCount);
-            url.searchParams.set('starts_after', 'yesterday');
+			url.searchParams.set('per_page', 50);
+			url.searchParams.set('starts_after', 'yesterday');
 
 			const response = await fetch(url.toString(), {
 				method: 'GET',
@@ -140,7 +142,8 @@ export default function Edit( { attributes, setAttributes } ) {
 				date: dateI18n('F, j, Y', item.start_date) || '',
 				venue: item.venue?.venue || '',
 				featured_image: item.image?.url || '',
-				link: item.url || ''
+				link: item.url || '',
+				slug: item.slug || ''
 			}));
 
 			setPreviewData(processedData);
@@ -196,6 +199,36 @@ export default function Edit( { attributes, setAttributes } ) {
 		return tmp.textContent || tmp.innerText || '';
 	};
 
+	/**
+	 * Filter out duplicate events based on slug.
+	 * Since the API returns events sorted by date, the first occurrence
+	 * of each slug is the nearest upcoming instance.
+	 */
+	const deduplicateEvents = (events) => {
+		const seen = new Set();
+		return events.filter((event) => {
+			if (!event.slug) return true;
+			if (seen.has(event.slug)) return false;
+			seen.add(event.slug);
+			return true;
+		});
+	};
+
+	// Identify slugs that appear more than once (series/repeating events)
+	const seriesSlugs = new Set();
+	const slugCounts = {};
+	previewData.forEach((event) => {
+		if (event.slug) {
+			slugCounts[event.slug] = (slugCounts[event.slug] || 0) + 1;
+		}
+	});
+	Object.entries(slugCounts).forEach(([slug, count]) => {
+		if (count > 1) seriesSlugs.add(slug);
+	});
+
+	const dedupedData = hideRepeating ? deduplicateEvents(previewData) : previewData;
+	const displayData = dedupedData.slice(0, itemCount);
+
 	const renderEventItem = (event, index) => (
 		<div key={index} className="ucsc-event-item">
 			{event.featured_image && (
@@ -216,6 +249,12 @@ export default function Edit( { attributes, setAttributes } ) {
 				{event.date && (
 					<div className="ucsc-event-date">
 						{stripHTMLTags(event.date)}
+					</div>
+				)}
+				{event.slug && seriesSlugs.has(event.slug) && (
+					<div className="ucsc-event-series">
+						<span className="dashicons dashicons-controls-repeat"></span>
+						{__('Series', 'ucsc-events')}
 					</div>
 				)}
 				{event.venue && (
@@ -275,6 +314,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						help={__('Choose how events should be displayed', 'ucsc-events')}
 					/>
 
+					<ToggleControl
+						label={__('Hide repeating events', 'ucsc-events')}
+						checked={hideRepeating}
+						onChange={(value) => setAttributes({ hideRepeating: value })}
+						help={__('Show only the next upcoming instance of each repeating event.', 'ucsc-events')}
+					/>
+
 					<div className="ucsc-events-cache-controls">
 						<Button
 							variant="secondary"
@@ -316,15 +362,15 @@ export default function Edit( { attributes, setAttributes } ) {
 					</Notice>
 				)}
 
-				{apiUrl && !isLoading && !error && previewData.length === 0 && (
+				{apiUrl && !isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
 						{__('No items found at the specified URL.', 'ucsc-events')}
 					</Notice>
 				)}
 
-				{apiUrl && !isLoading && !error && previewData.length > 0 && (
+				{apiUrl && !isLoading && !error && displayData.length > 0 && (
 					<div className="ucsc-events-list">
-						{previewData.map(renderEventItem)}
+						{displayData.map(renderEventItem)}
 					</div>
 				)}
 			</div>

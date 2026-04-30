@@ -141,6 +141,21 @@
 		}
 	}
 
+	.ucsc-event-series {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-bottom: 0.5rem;
+		font-size: 0.8rem;
+		color: #555;
+
+		.dashicons {
+			font-size: 1rem;
+			width: 1rem;
+			height: 1rem;
+		}
+	}
+
 	.ucsc-event-excerpt {
 		margin: 0;
 		font-size: 0.95rem;
