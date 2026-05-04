@@ -98,17 +98,19 @@
         background: #2a7b9b;
         background: linear-gradient(
             90deg,
-            rgba(42, 123, 155, 0.8) 0%,
-            rgba(201, 247, 220, 0.8) 50%,
-            rgba(237, 221, 83, 0.8) 100%
+            rgba(42, 123, 155, 0.4) 0%,
+            rgba(201, 247, 220, 0.4) 50%,
+            rgba(237, 221, 83, 0.4) 100%
         );
         border-radius: 2px;
 
         .ucsc-cf-placeholder-content p {
-            margin: 0;
-            font-size: 1.3rem;
+            margin: .5em auto;
+            font-size: 1rem;
             color: #121212;
-            font-weight: 500;
+            font-weight: 400;
+            max-width: 38em;
+
         }
     }
 

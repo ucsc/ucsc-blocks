@@ -312,7 +312,7 @@ function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
 
     // Basic sanity check — must contain VCALENDAR
     if ( strpos( $body, 'BEGIN:VCALENDAR' ) === false ) {
-        error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid ICS feed' );
+        error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid iCalendar feed' );
         return array();
     }
 

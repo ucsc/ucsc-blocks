@@ -196,10 +196,10 @@ export default function Edit( { attributes, setAttributes } ) {
             <InspectorControls>
                 <PanelBody title={ __( 'Calendar Settings', 'ucsc-blocks' ) } initialOpen={ true }>
                     <TextControl
-                        label={ __( 'ICS Feed URL', 'ucsc-blocks' ) }
+                        label={ __( 'Feed URL', 'ucsc-blocks' ) }
                         value={ feedUrl }
                         onChange={ ( value ) => setAttributes( { feedUrl: value.trim() } ) }
-                        help={ __( 'Paste the URL of an ICS/iCal feed (.ics). Works with Google Calendar, Outlook, and other calendar systems.', 'ucsc-blocks' ) }
+                        help={ __( 'Paste the URL of an iCalendar feed (usually ends with .ics).', 'ucsc-blocks' ) }
                         placeholder="https://example.com/calendar.ics"
                     />
 
@@ -242,9 +242,12 @@ export default function Edit( { attributes, setAttributes } ) {
                 { ! feedUrl && (
                     <div className="ucsc-cf-placeholder">
                         <div className="ucsc-cf-placeholder-content">
-                            <h3>{ __( 'Calendar Feed', 'ucsc-blocks' ) }</h3>
+                            <h3>{ __( 'iCalendar feed block', 'ucsc-blocks' ) }</h3>
                             <p>
-                                { __( 'Enter an ICS feed URL in the block settings to display upcoming events.', 'ucsc-blocks' ) }
+                                { __('Enter a public iCalendar feed URL in the block settings to display upcoming events. In the settings for your Calendar, look for the "Public address in iCal format" link.', 'ucsc-blocks')}
+                            </p>
+                            <p>
+                                <a href="https://support.google.com/calendar/answer/37083" target="_blank" rel="noreferrer">{__('See this Google Calendar help document for assistance.', 'ucsc-blocks')}</a> {__( 'Other calendar platforms should have similar options. Check their documentation for details.', 'ucsc-blocks' ) }
                             </p>
                         </div>
                     </div>
