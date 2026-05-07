@@ -21,9 +21,12 @@ jobs:
     uses: ucsc/actions/.github/workflows/release.yml@v1
     with:
       zip-name: ${{ github.event.repository.name }}.zip
-      use-composer: true
-      composer-args: '--no-dev --no-progress --optimize-autoloader'
-      # Uncomment / adjust any of these to override defaults:
+      #
+      # DEFAULTS
+      # Uncomment the following lines to adjust the defaults:
+      #
       # node-version: '24'
       # build-command: 'build'
+      # use-composer: true
+      # composer-args: '--no-dev --no-progress --optimize-autoloader'
       # generate-release-notes: true
