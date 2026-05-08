@@ -1,0 +1,136 @@
+/**
+ * Shared styles for the Calendar Feed block (editor + frontend).
+ */
+
+.wp-block-ucsc-calendar-feed {
+    margin: 2rem 0;
+
+    // ── List layout ──────────────────────────────────────────────
+    &.layout-list {
+        .ucsc-cf-events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .ucsc-cf-event-item {
+            padding: 0.75rem 0;
+        }
+    }
+
+    // ── Grid layout ──────────────────────────────────────────────
+    &.layout-grid {
+        .ucsc-cf-events-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .ucsc-cf-event-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+    }
+
+    // ── Reset list defaults ─────────────────────────────────────
+    .ucsc-cf-events-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .ucsc-cf-event-item {
+        list-style: none;
+    }
+
+    // ── Common element styles ────────────────────────────────────
+    .ucsc-cf-event-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: #1a1a1a;
+    }
+
+    .ucsc-cf-event-date {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.35rem;
+    }
+
+    .ucsc-cf-event-location {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.35rem;
+
+        &::before {
+            content: "📍 ";
+        }
+
+        // When the location is a link, swap the pin for a video icon.
+        &:has(> a)::before {
+            content: "🔗 ";
+        }
+
+        a {
+            color: #0073aa;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .ucsc-cf-event-description {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    // ── Placeholder ──────────────────────────────────────────────
+    .ucsc-cf-placeholder {
+        padding: 2.2rem;
+        text-align: center;
+        background: #2a7b9b;
+        background: linear-gradient(
+            90deg,
+            rgba(42, 123, 155, 0.4) 0%,
+            rgba(201, 247, 220, 0.4) 50%,
+            rgba(237, 221, 83, 0.4) 100%
+        );
+        border-radius: 2px;
+
+        .ucsc-cf-placeholder-content p {
+            margin: .5em auto;
+            font-size: 1rem;
+            color: #121212;
+            font-weight: 400;
+            max-width: 38em;
+
+        }
+    }
+
+    // ── Loading ──────────────────────────────────────────────────
+    .ucsc-cf-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 2rem;
+        font-size: 1rem;
+        color: #666;
+    }
+
+    // ── Responsive ───────────────────────────────────────────────
+    @media (max-width: 768px) {
+        &.layout-grid {
+            .ucsc-cf-events-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}

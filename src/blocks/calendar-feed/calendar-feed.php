@@ -1,0 +1,479 @@
+<?php
+/**
+ * Server-side functions for the Calendar Feed block.
+ *
+ * Handles ICS feed fetching, parsing VEVENT data, caching with transients,
+ * and AJAX cache-clearing.
+ *
+ * @package UcscBlocks
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * Enqueue editor scripts for the Calendar Feed block
+ */
+function ucsc_calendar_feed_enqueue_block_editor_assets() {
+    wp_localize_script(
+        'ucsc-calendar-feed-editor-script',
+        'ucscCalendarFeedData',
+        array(
+            'nonce'   => wp_create_nonce( 'ucsc_calendar_feed_nonce' ),
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+        )
+    );
+}
+add_action( 'enqueue_block_editor_assets', 'ucsc_calendar_feed_enqueue_block_editor_assets' );
+
+/**
+ * Get the HTML elements allowed in event descriptions.
+ *
+ * @return array Allowed HTML tags and attributes for wp_kses().
+ */
+function ucsc_calendar_feed_allowed_description_html() {
+    return array(
+        'a'  => array(
+            'href'   => true,
+            'rel'    => true,
+            'target' => true,
+            'title'  => true,
+        ),
+        'b'  => array(),
+        'i'  => array(),
+        'li' => array(),
+        'ol' => array(),
+        'u'  => array(),
+        'ul' => array(),
+    );
+}
+
+/**
+ * Parse an ICS feed string into an array of events.
+ *
+ * Lightweight parser that extracts VEVENT components and their properties.
+ * Handles folded lines (RFC 5545 §3.1), DTSTART/DTEND with and without
+ * TZID parameters, and common text fields.
+ *
+ * @param string $ics_content Raw ICS file content.
+ * @return array Array of associative arrays with event data.
+ */
+function ucsc_calendar_feed_parse( $ics_content ) {
+    if ( empty( $ics_content ) ) {
+        return array();
+    }
+
+    // Unfold lines per RFC 5545 §3.1 — a CRLF followed by a single
+    // whitespace character is a line continuation.
+    $ics_content = str_replace( "\r\n", "\n", $ics_content );
+    $ics_content = preg_replace( '/\n[ \t]/', '', $ics_content );
+
+    $lines  = explode( "\n", $ics_content );
+    $events = array();
+    $event  = null;
+
+    foreach ( $lines as $line ) {
+        $line = trim( $line );
+
+        if ( $line === 'BEGIN:VEVENT' ) {
+            $event = array(
+                'summary'     => '',
+                'dtstart'     => '',
+                'dtend'       => '',
+                'location'    => '',
+                'description' => '',
+                'uid'         => '',
+                'url'         => '',
+            );
+            continue;
+        }
+
+        if ( $line === 'END:VEVENT' && $event !== null ) {
+            $events[] = $event;
+            $event    = null;
+            continue;
+        }
+
+        if ( $event === null ) {
+            continue;
+        }
+
+        // Split on the first colon that is not inside a parameter value.
+        // Property lines look like: PROPNAME;PARAM=VAL:value
+        // We need to handle parameters like DTSTART;TZID=America/Los_Angeles:20260301T090000
+        $colon_pos = strpos( $line, ':' );
+        if ( $colon_pos === false ) {
+            continue;
+        }
+
+        $prop_part  = substr( $line, 0, $colon_pos );
+        $value_part = substr( $line, $colon_pos + 1 );
+
+        // The property name is everything before the first semicolon (parameters).
+        $semi_pos  = strpos( $prop_part, ';' );
+        $prop_name = ( $semi_pos !== false ) ? substr( $prop_part, 0, $semi_pos ) : $prop_part;
+        $prop_name = strtoupper( $prop_name );
+
+        // Unescape ICS text values.
+        $value_part = str_replace(
+            array( '\\n', '\\N', '\\,', '\\;', '\\\\' ),
+            array( "\n",  "\n",  ',',   ';',   '\\'    ),
+            $value_part
+        );
+
+        switch ( $prop_name ) {
+            case 'SUMMARY':
+                $event['summary'] = $value_part;
+                break;
+            case 'DTSTART':
+                $event['dtstart'] = ucsc_calendar_feed_parse_datetime( $value_part );
+                break;
+            case 'DTEND':
+                $event['dtend'] = ucsc_calendar_feed_parse_datetime( $value_part );
+                break;
+            case 'LOCATION':
+                $event['location'] = $value_part;
+                break;
+            case 'DESCRIPTION':
+                $event['description'] = $value_part;
+                break;
+            case 'UID':
+                $event['uid'] = $value_part;
+                break;
+            case 'URL':
+                $event['url'] = $value_part;
+                break;
+        }
+    }
+
+    return $events;
+}
+
+/**
+ * Parse an ICS datetime string into a Unix timestamp.
+ *
+ * Supports formats:
+ *  - 20260301T090000Z  (UTC)
+ *  - 20260301T090000   (floating / local)
+ *  - 20260301          (all-day)
+ *
+ * @param string $dt ICS datetime value.
+ * @return int Unix timestamp, or 0 on failure.
+ */
+function ucsc_calendar_feed_parse_datetime( $dt ) {
+    $dt = trim( $dt );
+
+    // All-day date: YYYYMMDD
+    if ( preg_match( '/^\d{8}$/', $dt ) ) {
+        $parsed = DateTime::createFromFormat( 'Ymd', $dt );
+        if ( $parsed ) {
+            $parsed->setTime( 0, 0, 0 );
+            return $parsed->getTimestamp();
+        }
+    }
+
+    // Date-time with UTC indicator
+    if ( preg_match( '/^\d{8}T\d{6}Z$/', $dt ) ) {
+        $parsed = DateTime::createFromFormat( 'Ymd\THis\Z', $dt, new DateTimeZone( 'UTC' ) );
+        if ( $parsed ) {
+            return $parsed->getTimestamp();
+        }
+    }
+
+    // Date-time without timezone (treat as site timezone)
+    if ( preg_match( '/^\d{8}T\d{6}$/', $dt ) ) {
+        $tz     = wp_timezone();
+        $parsed = DateTime::createFromFormat( 'Ymd\THis', $dt, $tz );
+        if ( $parsed ) {
+            return $parsed->getTimestamp();
+        }
+    }
+
+    // No recognised format — return 0 rather than accepting arbitrary input.
+    return 0;
+}
+
+/**
+ * Validate that a feed URL is safe to fetch.
+ *
+ * Rejects non-HTTPS schemes and private/reserved IP ranges to
+ * prevent SSRF attacks against internal infrastructure.
+ *
+ * @param string $url The URL to validate.
+ * @return bool True if the URL is safe, false otherwise.
+ */
+function ucsc_calendar_feed_validate_feed_url( $url ) {
+    // Must be a valid URL.
+    if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+        return false;
+    }
+
+    // Only allow HTTPS (block file://, ftp://, http://, gopher://, etc.).
+    $scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+    if ( strtolower( $scheme ) !== 'https' ) {
+        return false;
+    }
+
+    // Resolve hostname and reject private/reserved IPs (SSRF protection).
+    $host = wp_parse_url( $url, PHP_URL_HOST );
+    if ( empty( $host ) ) {
+        return false;
+    }
+
+    // Block obvious internal hostnames.
+    $blocked_hosts = array( 'localhost', '127.0.0.1', '::1', '0.0.0.0' );
+    if ( in_array( strtolower( $host ), $blocked_hosts, true ) ) {
+        return false;
+    }
+
+    // Resolve DNS and reject private/reserved IP ranges.
+    $ip = gethostbyname( $host );
+    if ( $ip === $host ) {
+        // DNS resolution failed.
+        return false;
+    }
+
+    if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Maximum allowed ICS response body size in bytes (2 MB).
+ */
+define( 'UCSC_CALENDAR_FEED_MAX_BODY_SIZE', 2 * 1024 * 1024 );
+
+/**
+ * Fetch and parse events from an ICS feed URL.
+ *
+ * Results are cached using WordPress transients for 30 minutes.  The cache
+ * stores up to 20 future events keyed only by feed URL so that changing
+ * the display count does not trigger a re-fetch.
+ *
+ * @param string $feed_url The ICS feed URL.
+ * @param int    $count    Maximum number of events to return.
+ * @return array Array of processed event arrays.
+ */
+function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
+    if ( empty( $feed_url ) ) {
+        return array();
+    }
+
+    // Clamp count to a sane range.
+    $count = max( 1, min( 20, intval( $count ) ) );
+
+    // Cache key is based on URL only — count is applied after retrieval.
+    $cache_key  = 'ucsc_cf_' . md5( $feed_url );
+    $cached     = get_transient( $cache_key );
+
+    if ( false !== $cached ) {
+        return array_slice( $cached, 0, $count );
+    }
+
+    // Validate URL — scheme, host, and SSRF checks.
+    if ( ! ucsc_calendar_feed_validate_feed_url( $feed_url ) ) {
+        error_log( 'UCSC Calendar Feed Error: URL failed validation — ' . $feed_url );
+        return array();
+    }
+
+    // Fetch the ICS feed
+    $response = wp_remote_get( $feed_url, array(
+        'timeout'   => 10,
+        'headers'   => array(
+            'User-Agent' => 'UCSC Calendar Feed Block/1.0',
+            'Accept'     => 'text/calendar, text/plain, */*',
+        ),
+        'sslverify' => true,
+        // WordPress doesn't natively enforce a body size limit on
+        // wp_remote_get, but we check immediately after retrieval.
+    ) );
+
+    if ( is_wp_error( $response ) ) {
+        error_log( 'UCSC Calendar Feed Error: ' . $response->get_error_message() );
+        return array();
+    }
+
+    $response_code = wp_remote_retrieve_response_code( $response );
+    if ( $response_code !== 200 ) {
+        error_log( 'UCSC Calendar Feed Error: HTTP ' . $response_code );
+        return array();
+    }
+
+    $body = wp_remote_retrieve_body( $response );
+
+    // Enforce a maximum body size to prevent memory exhaustion.
+    if ( strlen( $body ) > UCSC_CALENDAR_FEED_MAX_BODY_SIZE ) {
+        error_log( 'UCSC Calendar Feed Error: Response body exceeds ' . UCSC_CALENDAR_FEED_MAX_BODY_SIZE . ' bytes' );
+        return array();
+    }
+
+    // Basic sanity check — must contain VCALENDAR
+    if ( strpos( $body, 'BEGIN:VCALENDAR' ) === false ) {
+        error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid iCalendar feed' );
+        return array();
+    }
+
+    // Parse events
+    $raw_events = ucsc_calendar_feed_parse( $body );
+
+    if ( empty( $raw_events ) ) {
+        return array();
+    }
+
+    // Use the start of today (site timezone) as the cutoff so that
+    // events starting earlier today are still displayed.
+    $today  = ( new DateTime( 'today', wp_timezone() ) )->getTimestamp();
+    $events = array();
+
+    foreach ( $raw_events as $raw ) {
+        $start = $raw['dtstart'];
+        $end   = $raw['dtend'];
+
+        // Skip events that are entirely in the past.  An event is kept
+        // when it starts today-or-later, OR when it started earlier but
+        // its end date is still today-or-later (multi-day / in-progress).
+        $dominated_by_past = $start && $start < $today;
+        $still_running     = $end && $end >= $today;
+
+        if ( $dominated_by_past && ! $still_running ) {
+            continue;
+        }
+
+        // Format date for display.
+        $date_display = '';
+        if ( $start ) {
+            $date_format = get_option( 'date_format' );
+            $time_format = get_option( 'time_format' );
+
+            $start_dt  = new DateTime( '@' . $start );
+            $is_allday = ( $start_dt->format( 'H:i:s' ) === '00:00:00' );
+
+            if ( $is_allday ) {
+                $date_display = date_i18n( $date_format, $start );
+            } else {
+                $date_display = date_i18n( $date_format . ' ' . $time_format, $start );
+            }
+
+            // Show a date range when the event spans multiple days.
+            if ( $end && $end > $start ) {
+                $end_dt       = new DateTime( '@' . $end );
+                $end_is_allday = ( $end_dt->format( 'H:i:s' ) === '00:00:00' );
+
+                // For all-day ranges the DTEND is exclusive (the day *after*
+                // the last day), so subtract one day for display.
+                if ( $is_allday && $end_is_allday ) {
+                    $last_day = clone $end_dt;
+                    $last_day->modify( '-1 day' );
+
+                    // Only show a range if start and (inclusive) end differ.
+                    if ( $start_dt->format( 'Ymd' ) !== $last_day->format( 'Ymd' ) ) {
+                        $date_display .= ' – ' . date_i18n( $date_format, $last_day->getTimestamp() );
+                    }
+                } elseif ( $start_dt->format( 'Ymd' ) !== $end_dt->format( 'Ymd' ) ) {
+                    // Timed event that crosses midnight into another day.
+                    $date_display .= ' – ' . date_i18n( $date_format . ' ' . $time_format, $end );
+                }
+            }
+        }
+
+        // Sanitize text fields from the ICS feed.
+        $title    = ! empty( $raw['summary'] ) ? sanitize_text_field( $raw['summary'] ) : __( 'Untitled Event', 'ucsc-blocks' );
+        $location = sanitize_text_field( $raw['location'] );
+        $desc     = wp_kses(
+            $raw['description'],
+            ucsc_calendar_feed_allowed_description_html(),
+            array( 'http', 'https' )
+        );
+
+        $events[] = array(
+            'title'       => $title,
+            'date'        => $date_display,
+            'start'       => $start,
+            'location'    => $location,
+            'description' => $desc,
+        );
+    }
+
+    // Sort by start date ascending
+    usort( $events, function ( $a, $b ) {
+        return $a['start'] - $b['start'];
+    } );
+
+    // Keep up to 20 events for caching (the maximum allowed count).
+    $events = array_slice( $events, 0, 20 );
+
+    // Remove internal 'start' timestamp before caching.
+    $events = array_map( function ( $e ) {
+        unset( $e['start'] );
+        return $e;
+    }, $events );
+
+    // Cache for 30 minutes — keyed by URL only so changing the display
+    // count doesn't trigger a re-fetch.
+    set_transient( $cache_key, $events, 30 * MINUTE_IN_SECONDS );
+
+    return array_slice( $events, 0, $count );
+}
+
+/**
+ * AJAX handler: clear calendar feed cache.
+ */
+function ucsc_calendar_feed_clear_cache() {
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_calendar_feed_nonce' ) ) {
+        wp_send_json_error( array( 'message' => 'Security check failed' ) );
+        return;
+    }
+
+    if ( ! current_user_can( 'edit_posts' ) ) {
+        wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+        return;
+    }
+
+    $feed_url = isset( $_POST['feed_url'] ) ? sanitize_url( $_POST['feed_url'] ) : '';
+
+    if ( ! empty( $feed_url ) ) {
+        $cache_key = 'ucsc_cf_' . md5( $feed_url );
+        delete_transient( $cache_key );
+
+        wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
+    } else {
+        wp_send_json_error( array( 'message' => 'Invalid feed URL' ) );
+    }
+}
+add_action( 'wp_ajax_ucsc_calendar_feed_clear_cache', 'ucsc_calendar_feed_clear_cache' );
+
+/**
+ * AJAX handler: return parsed ICS events as JSON for the editor preview.
+ */
+function ucsc_calendar_feed_preview() {
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_calendar_feed_nonce' ) ) {
+        wp_send_json_error( array( 'message' => 'Security check failed' ) );
+        return;
+    }
+
+    if ( ! current_user_can( 'edit_posts' ) ) {
+        wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+        return;
+    }
+
+    $feed_url   = isset( $_POST['feed_url'] ) ? sanitize_url( $_POST['feed_url'] ) : '';
+    $item_count = isset( $_POST['item_count'] ) ? absint( $_POST['item_count'] ) : 5;
+    $item_count = max( 1, min( 20, $item_count ) );
+
+    if ( empty( $feed_url ) ) {
+        wp_send_json_error( array( 'message' => 'No feed URL provided' ) );
+        return;
+    }
+
+    if ( ! ucsc_calendar_feed_validate_feed_url( $feed_url ) ) {
+        wp_send_json_error( array( 'message' => 'Invalid or disallowed feed URL. Only public HTTPS URLs are accepted.' ) );
+        return;
+    }
+
+    $events = ucsc_calendar_feed_fetch_events( $feed_url, $item_count );
+    wp_send_json_success( $events );
+}
+add_action( 'wp_ajax_ucsc_calendar_feed_preview', 'ucsc_calendar_feed_preview' );
