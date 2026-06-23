@@ -4,10 +4,20 @@
  * @see https://github.com/WordPress/gutenberg/blob/trunk/docs/reference-guides/block-api/block-metadata.md#render
  */
 
-$api_url = $attributes['apiUrl'] ?? '';
+$organizers = $attributes['organizers'] ?? array();
+$legacy_url = $attributes['apiUrl'] ?? '';
 $item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
 $hide_repeating = $attributes['hideRepeating'] ?? false;
+
+// Build the API URL from the selected organizers (falling back to a legacy URL
+// or the unfiltered campus feed).
+$organizer_ids = function_exists('ucsc_events_get_organizer_ids')
+	? ucsc_events_get_organizer_ids($organizers)
+	: array();
+$api_url = function_exists('ucsc_events_build_api_url')
+	? ucsc_events_build_api_url($organizer_ids, $legacy_url)
+	: $legacy_url;
 
 // Get the block wrapper attributes with layout class
 $wrapper_attributes = get_block_wrapper_attributes(array(
