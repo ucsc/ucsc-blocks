@@ -8,6 +8,8 @@ $api_url = $attributes['apiUrl'] ?? '';
 $item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
 $hide_repeating = $attributes['hideRepeating'] ?? false;
+$categories = $attributes['categories'] ?? array();
+$tags = $attributes['tags'] ?? array();
 
 // Get the block wrapper attributes with layout class
 $wrapper_attributes = get_block_wrapper_attributes(array(
@@ -19,7 +21,7 @@ $events = array();
 $series_slugs = array();
 if (!empty($api_url)) {
 	if (function_exists('ucsc_events_fetch_data')) {
-		$events = ucsc_events_fetch_data($api_url);
+		$events = ucsc_events_fetch_data($api_url, $categories, $tags);
 
 		// Identify slugs that appear more than once (i.e. repeating/series events).
 		// Built from the full dataset before any filtering or slicing.

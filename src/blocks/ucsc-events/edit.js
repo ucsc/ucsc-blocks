@@ -16,19 +16,20 @@ import { useBlockProps, InspectorControls, BlockControls } from '@wordpress/bloc
 /**
  * WordPress dependencies
  */
-import { 
+import {
 	PanelBody,
 	TextControl,
 	RangeControl,
 	SelectControl,
 	ToggleControl,
+	FormTokenField,
 	Button,
 	Notice,
 	ToolbarGroup,
 	ToolbarButton,
 	Spinner
 } from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { dateI18n } from '@wordpress/date';
 
@@ -53,11 +54,14 @@ import './editor.scss';
  * @return {Element} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const { apiUrl, itemCount, layoutStyle, hideRepeating } = attributes;
+	const { apiUrl, itemCount, layoutStyle, hideRepeating, categories, tags } = attributes;
 	const [previewData, setPreviewData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [cacheCleared, setCacheCleared] = useState(false);
+	const [categoryOptions, setCategoryOptions] = useState([]);
+	const [tagSuggestions, setTagSuggestions] = useState([]);
+	const tagSearchTimeout = useRef();
 
 	const blockProps = useBlockProps({
 		className: `layout-${layoutStyle}`
@@ -68,6 +72,90 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __('Grid', 'ucsc-events'), value: 'grid' },
 		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
 	];
+
+	// Convert a label into a slug, mirroring WordPress's sanitize_title() closely
+	// enough for free-form tokens the user types that aren't in the suggestion list.
+	const slugify = (value) =>
+		String(value)
+			.toLowerCase()
+			.trim()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '');
+
+	// Derive the Tribe REST API root (e.g. .../tribe/events/v1) from the events
+	// endpoint URL so we can reach the sibling /categories and /tags endpoints.
+	const getApiRoot = (urlStr) => {
+		try {
+			const url = new URL(urlStr);
+			url.pathname = url.pathname.replace(/\/events\/?$/, '');
+			url.search = '';
+			return url.toString().replace(/\/$/, '');
+		} catch {
+			return '';
+		}
+	};
+
+	// Maps between category names (shown to editors) and slugs (stored/sent).
+	const slugToCategoryName = {};
+	const categoryNameToSlug = {};
+	categoryOptions.forEach((option) => {
+		slugToCategoryName[option.slug] = option.name;
+		categoryNameToSlug[option.name] = option.slug;
+	});
+
+	// Load the available event categories when the API URL changes.
+	useEffect(() => {
+		const root = getApiRoot(apiUrl);
+		if (!root) {
+			setCategoryOptions([]);
+			return;
+		}
+
+		let cancelled = false;
+		fetch(`${root}/categories?per_page=50`, {
+			headers: { Accept: 'application/json' }
+		})
+			.then((response) => (response.ok ? response.json() : null))
+			.then((data) => {
+				if (cancelled || !data || !Array.isArray(data.categories)) return;
+				setCategoryOptions(
+					data.categories.map((category) => ({
+						name: category.name,
+						slug: category.slug
+					}))
+				);
+			})
+			.catch(() => {
+				if (!cancelled) setCategoryOptions([]);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [apiUrl]);
+
+	// Debounced tag search to feed the tag token field's suggestions.
+	const searchTags = (input) => {
+		clearTimeout(tagSearchTimeout.current);
+
+		const root = getApiRoot(apiUrl);
+		if (!root || !input || input.length < 2) {
+			setTagSuggestions([]);
+			return;
+		}
+
+		tagSearchTimeout.current = setTimeout(() => {
+			fetch(`${root}/tags?per_page=10&search=${encodeURIComponent(input)}`, {
+				headers: { Accept: 'application/json' }
+			})
+				.then((response) => (response.ok ? response.json() : null))
+				.then((data) => {
+					if (!data || !Array.isArray(data.tags)) return;
+					setTagSuggestions(data.tags.map((tag) => tag.slug));
+				})
+				.catch(() => setTagSuggestions([]));
+		}, 500);
+	};
 
 	// Fetch preview data when API URL changes (debounced).
 	// Always fetches 50 events; itemCount is applied locally when rendering.
@@ -85,7 +173,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		// Cleanup function to cancel the timeout if apiUrl changes again
 		return () => clearTimeout(timeoutId);
-	}, [apiUrl]);
+	}, [apiUrl, categories.join(','), tags.join(',')]);
 
 	const fetchPreviewData = async () => {
 		if (!apiUrl) return;
@@ -104,6 +192,13 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			url.searchParams.set('per_page', 50);
 			url.searchParams.set('starts_after', 'yesterday');
+
+			if (categories.length) {
+				url.searchParams.set('categories', categories.join(','));
+			}
+			if (tags.length) {
+				url.searchParams.set('tags', tags.join(','));
+			}
 
 			const response = await fetch(url.toString(), {
 				method: 'GET',
@@ -169,6 +264,8 @@ export default function Edit( { attributes, setAttributes } ) {
 			const formData = new FormData();
 			formData.append('action', 'ucsc_events_clear_cache');
 			formData.append('api_url', apiUrl);
+			formData.append('categories', categories.join(','));
+			formData.append('tags', tags.join(','));
 			formData.append('nonce', window.ucscEventsData?.nonce || '');
 
 			const response = await fetch(window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php', {
@@ -319,6 +416,33 @@ export default function Edit( { attributes, setAttributes } ) {
 						checked={hideRepeating}
 						onChange={(value) => setAttributes({ hideRepeating: value })}
 						help={__('Show only the next upcoming instance of each repeating event.', 'ucsc-events')}
+					/>
+
+					<FormTokenField
+						label={__('Filter by Category', 'ucsc-events')}
+						value={categories.map((slug) => slugToCategoryName[slug] || slug)}
+						suggestions={categoryOptions.map((option) => option.name)}
+						onChange={(tokens) => {
+							const slugs = tokens.map(
+								(token) => categoryNameToSlug[token] || slugify(token)
+							);
+							setAttributes({ categories: [...new Set(slugs)] });
+						}}
+						__experimentalExpandOnFocus
+						help={__('Show only events in the selected categories.', 'ucsc-events')}
+					/>
+
+					<FormTokenField
+						label={__('Filter by Tag', 'ucsc-events')}
+						value={tags}
+						suggestions={tagSuggestions}
+						onInputChange={searchTags}
+						onChange={(tokens) => {
+							const slugs = tokens.map((token) => slugify(token)).filter(Boolean);
+							setAttributes({ tags: [...new Set(slugs)] });
+						}}
+						__experimentalExpandOnFocus
+						help={__('Type to search tags, then select to filter events.', 'ucsc-events')}
 					/>
 
 					<div className="ucsc-events-cache-controls">

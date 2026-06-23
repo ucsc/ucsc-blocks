@@ -58,8 +58,12 @@ function ucsc_events_clear_cache() {
 
 	$api_url = isset($_POST['api_url']) ? sanitize_url( $_POST['api_url'] ) : '';
 
+	// Mirror the fetch path so we target the same transient for this selection.
+	$categories = isset( $_POST['categories'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['categories'] ) ) : array();
+	$tags       = isset( $_POST['tags'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['tags'] ) ) : array();
+
 	if ( ! empty( $api_url ) ) {
-		$cache_key = 'ucsc_events_' . md5( $api_url );
+		$cache_key = ucsc_events_cache_key( $api_url, $categories, $tags );
 		delete_transient( $cache_key );
 
 		wp_send_json_success( array( 'message' => 'Cache cleared successfully' ) );
@@ -70,19 +74,70 @@ function ucsc_events_clear_cache() {
 add_action( 'wp_ajax_ucsc_events_clear_cache', 'ucsc_events_clear_cache' );
 
 /**
+ * Sanitize a list of taxonomy slugs from external/editor input.
+ *
+ * Accepts either an array of slugs or a comma-separated string. Each value is
+ * passed through sanitize_title() and empties are dropped, so the result is
+ * safe to use in cache keys and API query strings.
+ *
+ * @param array|string $slugs Raw slug list.
+ * @return string[] Cleaned, re-indexed slug list.
+ */
+if ( ! function_exists( 'ucsc_events_sanitize_slugs' ) ) {
+	function ucsc_events_sanitize_slugs( $slugs ) {
+		if ( is_string( $slugs ) ) {
+			$slugs = explode( ',', $slugs );
+		}
+
+		if ( ! is_array( $slugs ) ) {
+			return array();
+		}
+
+		$clean = array_map( 'sanitize_title', $slugs );
+
+		return array_values( array_filter( $clean ) );
+	}
+}
+
+/**
+ * Build the transient cache key for a fetch, scoped to the URL and filters.
+ *
+ * Filters are folded into the key so different category/tag selections cache
+ * separately. Both the fetch and the cache-clear handler must use this helper
+ * so they target the same transient.
+ */
+if ( ! function_exists( 'ucsc_events_cache_key' ) ) {
+	function ucsc_events_cache_key( $api_url, $categories = array(), $tags = array() ) {
+		return 'ucsc_events_' . md5(
+			$api_url
+			. '|cats=' . implode( ',', $categories )
+			. '|tags=' . implode( ',', $tags )
+		);
+	}
+}
+
+/**
  * Fetch events data from external API.
  *
  * Always fetches the maximum 50 events from the API and caches them.
  * Callers are responsible for slicing the result to the desired count.
+ *
+ * @param string       $api_url    Events API endpoint.
+ * @param array|string $categories Category slugs to filter by (optional).
+ * @param array|string $tags       Tag slugs to filter by (optional).
  */
 if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
-	function ucsc_events_fetch_data( $api_url ) {
+	function ucsc_events_fetch_data( $api_url, $categories = array(), $tags = array() ) {
 		if ( empty( $api_url ) ) {
 			return array();
 		}
 
-		// Create cache key based on URL only
-		$cache_key = 'ucsc_events_' . md5( $api_url );
+		// Sanitize filter slugs before they touch the cache key or query string.
+		$categories = ucsc_events_sanitize_slugs( $categories );
+		$tags       = ucsc_events_sanitize_slugs( $tags );
+
+		// Create cache key based on URL and selected filters
+		$cache_key = ucsc_events_cache_key( $api_url, $categories, $tags );
 
 		// Try to get cached data first
 		$cached_data = get_transient( $cache_key );
@@ -96,10 +151,20 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		}
 
 		// Always fetch the maximum number of events (API caps at 50)
-		$full_url = add_query_arg( array(
+		$query_args = array(
 			'per_page'     => 50,
 			'starts_after' => 'yesterday'
-		), $api_url );
+		);
+
+		// Forward category/tag filters as comma-separated slugs (OR semantics).
+		if ( ! empty( $categories ) ) {
+			$query_args['categories'] = implode( ',', $categories );
+		}
+		if ( ! empty( $tags ) ) {
+			$query_args['tags'] = implode( ',', $tags );
+		}
+
+		$full_url = add_query_arg( $query_args, $api_url );
 
 		// Fetch data from API
 		$response = wp_remote_get( $full_url, array(
