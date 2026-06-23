@@ -16,9 +16,9 @@ import { useBlockProps, InspectorControls, BlockControls } from '@wordpress/bloc
 /**
  * WordPress dependencies
  */
-import { 
+import {
 	PanelBody,
-	TextControl,
+	FormTokenField,
 	RangeControl,
 	SelectControl,
 	ToggleControl,
@@ -31,6 +31,7 @@ import {
 import { useState, useEffect } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { dateI18n } from '@wordpress/date';
+import { decodeEntities } from '@wordpress/html-entities';
 
 /**
  * Lets webpack process CSS, SASS or SCSS files referenced in JavaScript files.
@@ -52,12 +53,25 @@ import './editor.scss';
  *
  * @return {Element} Element to render.
  */
+// Base UCSC Tribe Events REST endpoints. Provided by PHP via wp_localize_script
+// (single source of truth); the literals are defensive fallbacks only.
+const EVENTS_ENDPOINT =
+	window.ucscEventsData?.eventsUrl ||
+	'https://events.ucsc.edu/wp-json/tribe/events/v1/events';
+const ORGANIZERS_ENDPOINT =
+	window.ucscEventsData?.organizersUrl ||
+	'https://events.ucsc.edu/wp-json/tribe/events/v1/organizers';
+
 export default function Edit( { attributes, setAttributes } ) {
-	const { apiUrl, itemCount, layoutStyle, hideRepeating } = attributes;
+	const { organizers = [], apiUrl, itemCount, layoutStyle, hideRepeating } = attributes;
 	const [previewData, setPreviewData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [cacheCleared, setCacheCleared] = useState(false);
+
+	// Organizer autocomplete state.
+	const [orgSearch, setOrgSearch] = useState('');
+	const [orgSuggestions, setOrgSuggestions] = useState([]);
 
 	const blockProps = useBlockProps({
 		className: `layout-${layoutStyle}`
@@ -69,26 +83,107 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
 	];
 
-	// Fetch preview data when API URL changes (debounced).
-	// Always fetches 50 events; itemCount is applied locally when rendering.
+	/**
+	 * Build the events API URL from the selected organizers.
+	 *
+	 * Mirrors the server-side `ucsc_events_build_api_url()`: filter by organizer
+	 * when any are selected, fall back to a legacy hand-built URL, otherwise fetch
+	 * the unfiltered campus feed (all upcoming events).
+	 */
+	const buildEventsUrl = () => {
+		if (organizers.length > 0) {
+			const url = new URL(EVENTS_ENDPOINT);
+			organizers.forEach((org) => url.searchParams.append('organizer[]', org.id));
+			return url.toString();
+		}
+		if (apiUrl) {
+			return apiUrl;
+		}
+		return EVENTS_ENDPOINT;
+	};
+
+	const effectiveUrl = buildEventsUrl();
+
+	// Search organizers for the autocomplete field (debounced).
 	useEffect(() => {
-		if (!apiUrl) {
-			setPreviewData([]);
-			setError('');
+		const query = orgSearch.trim();
+		if (query.length < 2) {
+			setOrgSuggestions([]);
 			return;
 		}
 
-		// Debounce API calls - wait 1s after user stops typing
+		const timeoutId = setTimeout(async () => {
+			try {
+				const url = new URL(ORGANIZERS_ENDPOINT);
+				url.searchParams.set('search', query);
+				url.searchParams.set('per_page', 20);
+
+				const response = await fetch(url.toString(), {
+					headers: { 'Accept': 'application/json' },
+					signal: AbortSignal.timeout(8000)
+				});
+
+				if (!response.ok) {
+					setOrgSuggestions([]);
+					return;
+				}
+
+				const data = await response.json();
+				const list = Array.isArray(data.organizers) ? data.organizers : [];
+
+				// Map to { id, name } and drop duplicate display names so each
+				// suggestion is unambiguous in the token field.
+				const seen = new Set();
+				const mapped = [];
+				list.forEach((item) => {
+					// Organizer names arrive HTML-encoded (e.g. "Men&#8217;s");
+					// decode so tokens display the real characters.
+					const name = decodeEntities(item.organizer || '');
+					if (!name || !item.id || seen.has(name)) return;
+					seen.add(name);
+					mapped.push({ id: item.id, name });
+				});
+
+				setOrgSuggestions(mapped);
+			} catch {
+				setOrgSuggestions([]);
+			}
+		}, 400);
+
+		return () => clearTimeout(timeoutId);
+	}, [orgSearch]);
+
+	/**
+	 * Resolve the token strings from FormTokenField back into { id, name }
+	 * objects, preferring already-selected organizers, then current suggestions.
+	 * Unknown free-text entries are ignored so only valid organizers persist.
+	 */
+	const handleOrganizersChange = (tokens) => {
+		const next = tokens
+			.map((name) => {
+				const existing = organizers.find((org) => org.name === name);
+				if (existing) return existing;
+				return orgSuggestions.find((org) => org.name === name) || null;
+			})
+			.filter(Boolean);
+
+		setAttributes({ organizers: next });
+	};
+
+	// Fetch preview data when the effective URL changes (debounced).
+	// Always fetches 50 events; itemCount is applied locally when rendering.
+	useEffect(() => {
+		// Debounce API calls so rapid organizer edits don't spam the API.
 		const timeoutId = setTimeout(() => {
 			fetchPreviewData();
 		}, 1000);
 
-		// Cleanup function to cancel the timeout if apiUrl changes again
+		// Cleanup function to cancel the timeout if the URL changes again
 		return () => clearTimeout(timeoutId);
-	}, [apiUrl]);
+	}, [effectiveUrl]);
 
 	const fetchPreviewData = async () => {
-		if (!apiUrl) return;
+		if (!effectiveUrl) return;
 
 		setIsLoading(true);
 		setError('');
@@ -97,7 +192,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			// Basic URL validation
 			let url;
 			try {
-				url = new URL(apiUrl);
+				url = new URL(effectiveUrl);
 			} catch {
 				throw new Error(__('Please enter a valid URL', 'ucsc-events'));
 			}
@@ -161,14 +256,17 @@ export default function Edit( { attributes, setAttributes } ) {
 	};
 
 	const clearCache = async () => {
-		if (!apiUrl) return;
+		if (!effectiveUrl) return;
 
 		setIsLoading(true);
 
 		try {
 			const formData = new FormData();
 			formData.append('action', 'ucsc_events_clear_cache');
-			formData.append('api_url', apiUrl);
+			// Send organizer IDs (and any legacy URL) so the server rebuilds the
+			// exact URL used as the cache key.
+			formData.append('organizers', JSON.stringify(organizers.map((org) => org.id)));
+			formData.append('api_url', apiUrl || '');
 			formData.append('nonce', window.ucscEventsData?.nonce || '');
 
 			const response = await fetch(window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php', {
@@ -274,27 +372,22 @@ export default function Edit( { attributes, setAttributes } ) {
 						icon="update"
 						label={__('Clear Cache', 'ucsc-events')}
 						onClick={clearCache}
-						disabled={!apiUrl || isLoading}
+						disabled={isLoading}
 					/>
 				</ToolbarGroup>
 			</BlockControls>
 
 			<InspectorControls>
 				<PanelBody title={__('Event Settings', 'ucsc-events')} initialOpen={true}>
-					<TextControl
-						label={__('API URL', 'ucsc-events')}
-						value={apiUrl}
-						onChange={(value) => setAttributes({ apiUrl: value.trim() })}
-						help={
-							<>
-								{__('See ', 'ucsc-events')}
-                                <a href="https://docs.google.com/spreadsheets/d/16DKhaoxPc2h9qMHah6_fvHTvizZbIlEvOVvMW3Hxg-c/edit?gid=1514211697#gid=1514211697" target="_blank" rel="noopener noreferrer">
-                                    this Google Sheet
-								</a>
-                                {__(' ↗️ for help.', 'ucsc-events')}
-							</>
-						}
-						placeholder="https://events.ucsc.edu/wp-json/tribe/events/v1/events"
+					<FormTokenField
+						label={__('Organizers', 'ucsc-events')}
+						value={organizers.map((org) => org.name)}
+						suggestions={orgSuggestions.map((org) => org.name)}
+						onInputChange={setOrgSearch}
+						onChange={handleOrganizersChange}
+						__experimentalExpandOnFocus={true}
+						__experimentalShowHowTo={false}
+						help={__('Start typing to search organizers. Leave empty to show all upcoming campus events.', 'ucsc-events')}
 					/>
 
 					<RangeControl
@@ -325,7 +418,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						<Button
 							variant="secondary"
 							onClick={clearCache}
-							disabled={!apiUrl || isLoading}
+							disabled={isLoading}
 							isBusy={isLoading}
 						>
 							{__('Clear Cache', 'ucsc-events')}
@@ -340,35 +433,28 @@ export default function Edit( { attributes, setAttributes } ) {
 			</InspectorControls>
 
 			<div {...blockProps}>
-				{!apiUrl && (
-					<div className="ucsc-events-placeholder">
-						<div className="ucsc-events-placeholder-content">
-							<h3>{__('UCSC Events', 'ucsc-events')}</h3>
-							<p>{__('Enter an API URL in the block settings to display items.', 'ucsc-events')}</p>
-						</div>
-					</div>
-				)}
-
-				{apiUrl && isLoading && (
+				{isLoading && (
 					<div className="ucsc-events-loading">
 						<Spinner />
 						<span>{__('Loading items...', 'ucsc-events')}</span>
 					</div>
 				)}
 
-				{apiUrl && error && (
+				{!isLoading && error && (
 					<Notice status="error" isDismissible={false}>
 						{error}
 					</Notice>
 				)}
 
-				{apiUrl && !isLoading && !error && displayData.length === 0 && (
+				{!isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{__('No items found at the specified URL.', 'ucsc-events')}
+						{organizers.length > 0
+							? __('No upcoming events found for the selected organizers.', 'ucsc-events')
+							: __('No upcoming events found.', 'ucsc-events')}
 					</Notice>
 				)}
 
-				{apiUrl && !isLoading && !error && displayData.length > 0 && (
+				{!isLoading && !error && displayData.length > 0 && (
 					<div className="ucsc-events-list">
 						{displayData.map(renderEventItem)}
 					</div>

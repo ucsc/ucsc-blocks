@@ -10,12 +10,16 @@
 	"description": "Fetch and display campus events.",
 	"example": {
 		"attributes": {
-			"apiUrl": "https://events.ucsc.edu/wp-json/tribe/v1/events",
+			"organizers": [],
 			"itemCount": 3,
 			"layoutStyle": "list"
 		}
 	},
 	"attributes": {
+		"organizers": {
+			"type": "array",
+			"default": []
+		},
 		"apiUrl": {
 			"type": "string",
 			"default": ""
