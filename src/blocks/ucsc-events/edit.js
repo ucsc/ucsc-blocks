@@ -380,6 +380,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			<InspectorControls>
 				<PanelBody title={__('Event Settings', 'ucsc-events')} initialOpen={true}>
 					<FormTokenField
+						className="ucsc-events-organizers-field"
 						label={__('Organizers', 'ucsc-events')}
 						value={organizers.map((org) => org.name)}
 						suggestions={orgSuggestions.map((org) => org.name)}

@@ -42,6 +42,11 @@
 	}
 }
 
+// Organizers token field needs breathing room before the next control.
+.ucsc-events-organizers-field {
+	margin-bottom: 1.5rem;
+}
+
 // Inspector controls styling
 .ucsc-events-inspector-controls {
 	.components-panel__body {
