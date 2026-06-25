@@ -70,15 +70,15 @@ add_action( 'wp_enqueue_scripts', 'ucsc_events_enqueue_frontend_assets' );
  *
  * Organizers are filtered with the Tribe `organizer[]` query argument. When no
  * organizers are selected, an optional legacy URL (from older blocks that stored
- * a hand-built `apiUrl`) is used as a fallback; otherwise the unfiltered campus
- * feed is returned so the block shows all upcoming events.
+ * a hand-built `apiUrl`) is used as a fallback; otherwise an empty string is
+ * returned so an unconfigured block renders a placeholder instead of the feed.
  *
  * IDs are sanitized and sorted so the resulting URL — and therefore the cache
  * key derived from it — is deterministic regardless of selection order.
  *
  * @param array  $organizer_ids Organizer IDs to filter by.
  * @param string $legacy_url    Optional legacy API URL for backward compatibility.
- * @return string The events API URL to fetch.
+ * @return string The events API URL to fetch, or '' when nothing is configured.
  */
 if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
 	function ucsc_events_build_api_url( $organizer_ids, $legacy_url = '' ) {
@@ -96,7 +96,7 @@ if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
 			return esc_url_raw( $legacy_url, array( 'http', 'https' ) );
 		}
 
-		return $base;
+		return '';
 	}
 }
 
