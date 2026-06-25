@@ -80,7 +80,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 	<?php if (empty($api_url) or empty($events)): ?>
 		<div class="ucsc-events-placeholder">
 			<div class="ucsc-events-placeholder-content">
-				<p><?php _e('Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-events'); ?></p>
+				<p><?php _e('Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-blocks'); ?></p>
 			</div>
 		</div>
 	<?php else: ?>
@@ -117,7 +117,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 						<?php if (isset($series_slugs[$event['slug'] ?? ''])): ?>
 							<div class="ucsc-event-series">
 								<span class="dashicons dashicons-controls-repeat"></span>
-								<?php _e('Series', 'ucsc-events'); ?>
+								<?php _e('Series', 'ucsc-blocks'); ?>
 							</div>
 						<?php endif; ?>
 
