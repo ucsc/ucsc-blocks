@@ -87,8 +87,8 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Build the events API URL from the selected organizers.
 	 *
 	 * Mirrors the server-side `ucsc_events_build_api_url()`: filter by organizer
-	 * when any are selected, fall back to a legacy hand-built URL, otherwise fetch
-	 * the unfiltered campus feed (all upcoming events).
+	 * when any are selected, fall back to a legacy hand-built URL, otherwise
+	 * return an empty string so the block shows a placeholder until configured.
 	 */
 	const buildEventsUrl = () => {
 		if (organizers.length > 0) {
@@ -99,7 +99,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		if (apiUrl) {
 			return apiUrl;
 		}
-		return EVENTS_ENDPOINT;
+		return '';
 	};
 
 	const effectiveUrl = buildEventsUrl();
@@ -173,6 +173,13 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Fetch preview data when the effective URL changes (debounced).
 	// Always fetches 50 events; itemCount is applied locally when rendering.
 	useEffect(() => {
+		// Nothing configured yet — show the placeholder, don't fetch.
+		if (!effectiveUrl) {
+			setPreviewData([]);
+			setError('');
+			return;
+		}
+
 		// Debounce API calls so rapid organizer edits don't spam the API.
 		const timeoutId = setTimeout(() => {
 			fetchPreviewData();
@@ -372,7 +379,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						icon="update"
 						label={__('Clear Cache', 'ucsc-events')}
 						onClick={clearCache}
-						disabled={isLoading}
+						disabled={!effectiveUrl || isLoading}
 					/>
 				</ToolbarGroup>
 			</BlockControls>
@@ -388,7 +395,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={handleOrganizersChange}
 						__experimentalExpandOnFocus={true}
 						__experimentalShowHowTo={false}
-						help={__('Start typing to search organizers. Leave empty to show all upcoming campus events.', 'ucsc-events')}
+						help={__('Start typing to search organizers. Select at least one to display events.', 'ucsc-events')}
 					/>
 
 					<RangeControl
@@ -419,7 +426,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						<Button
 							variant="secondary"
 							onClick={clearCache}
-							disabled={isLoading}
+							disabled={!effectiveUrl || isLoading}
 							isBusy={isLoading}
 						>
 							{__('Clear Cache', 'ucsc-events')}
@@ -434,28 +441,35 @@ export default function Edit( { attributes, setAttributes } ) {
 			</InspectorControls>
 
 			<div {...blockProps}>
-				{isLoading && (
+				{!effectiveUrl && (
+					<div className="ucsc-events-placeholder">
+						<div className="ucsc-events-placeholder-content">
+							<h3>{__('UCSC Events', 'ucsc-events')}</h3>
+							<p>{__('Select one or more organizers in the block settings to display events.', 'ucsc-events')}</p>
+						</div>
+					</div>
+				)}
+
+				{effectiveUrl && isLoading && (
 					<div className="ucsc-events-loading">
 						<Spinner />
 						<span>{__('Loading items...', 'ucsc-events')}</span>
 					</div>
 				)}
 
-				{!isLoading && error && (
+				{effectiveUrl && !isLoading && error && (
 					<Notice status="error" isDismissible={false}>
 						{error}
 					</Notice>
 				)}
 
-				{!isLoading && !error && displayData.length === 0 && (
+				{effectiveUrl && !isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{organizers.length > 0
-							? __('No upcoming events found for the selected organizers.', 'ucsc-events')
-							: __('No upcoming events found.', 'ucsc-events')}
+						{__('No upcoming events found for the selected organizers.', 'ucsc-events')}
 					</Notice>
 				)}
 
-				{!isLoading && !error && displayData.length > 0 && (
+				{effectiveUrl && !isLoading && !error && displayData.length > 0 && (
 					<div className="ucsc-events-list">
 						{displayData.map(renderEventItem)}
 					</div>
