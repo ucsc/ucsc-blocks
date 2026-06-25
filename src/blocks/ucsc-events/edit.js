@@ -78,9 +78,9 @@ export default function Edit( { attributes, setAttributes } ) {
 	});
 
 	const layoutOptions = [
-		{ label: __('List', 'ucsc-events'), value: 'list' },
-		{ label: __('Grid', 'ucsc-events'), value: 'grid' },
-		{ label: __('Cards', 'ucsc-events'), value: 'cards' }
+		{ label: __('List', 'ucsc-blocks'), value: 'list' },
+		{ label: __('Grid', 'ucsc-blocks'), value: 'grid' },
+		{ label: __('Cards', 'ucsc-blocks'), value: 'cards' }
 	];
 
 	/**
@@ -201,7 +201,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			try {
 				url = new URL(effectiveUrl);
 			} catch {
-				throw new Error(__('Please enter a valid URL', 'ucsc-events'));
+				throw new Error(__('Please enter a valid URL', 'ucsc-blocks'));
 			}
 
 			url.searchParams.set('per_page', 50);
@@ -218,11 +218,11 @@ export default function Edit( { attributes, setAttributes } ) {
 			
 			if (!response.ok) {
 				if (response.status === 404) {
-					throw new Error(__('API endpoint not found. Please check the URL.', 'ucsc-events'));
+					throw new Error(__('API endpoint not found. Please check the URL.', 'ucsc-blocks'));
 				} else if (response.status === 403) {
-					throw new Error(__('Access denied to the API endpoint.', 'ucsc-events'));
+					throw new Error(__('Access denied to the API endpoint.', 'ucsc-blocks'));
 				} else {
-					throw new Error(__('Failed to fetch data from API. Status: ' + response.status, 'ucsc-events'));
+					throw new Error(__('Failed to fetch data from API. Status: ' + response.status, 'ucsc-blocks'));
 				}
 			}
 
@@ -230,7 +230,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			const data = fetched.events;
 			
 			if (!Array.isArray(data)) {
-				throw new Error(__('Invalid API response format. Expected an object with array of events.', 'ucsc-events'));
+				throw new Error(__('Invalid API response format. Expected an object with array of events.', 'ucsc-blocks'));
 			}
 
 			if (data.length === 0) {
@@ -239,7 +239,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 
 			const processedData = data.map(item => ({
-				title: item.title || __('Untitled', 'ucsc-events'),
+				title: item.title || __('Untitled', 'ucsc-blocks'),
 				organizer: item.organizer?.organizer || '',
 				date: dateI18n('F, j, Y', item.start_date) || '',
 				venue: item.venue?.venue || '',
@@ -252,7 +252,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		} catch (err) {
 			if (err.name === 'AbortError') {
-				setError(__('Request timeout. Please try again.', 'ucsc-events'));
+				setError(__('Request timeout. Please try again.', 'ucsc-blocks'));
 			} else {
 				setError(err.message);
 			}
@@ -289,7 +289,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				// Refetch data after clearing cache
 				fetchPreviewData();
 			} else {
-				throw new Error(result.data?.message || __('Failed to clear cache', 'ucsc-events'));
+				throw new Error(result.data?.message || __('Failed to clear cache', 'ucsc-blocks'));
 			}
 		} catch (err) {
 			setError(err.message);
@@ -359,7 +359,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				{event.slug && seriesSlugs.has(event.slug) && (
 					<div className="ucsc-event-series">
 						<span className="dashicons dashicons-controls-repeat"></span>
-						{__('Series', 'ucsc-events')}
+						{__('Series', 'ucsc-blocks')}
 					</div>
 				)}
 				{event.venue && (
@@ -377,7 +377,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				<ToolbarGroup>
 					<ToolbarButton
 						icon="update"
-						label={__('Clear Cache', 'ucsc-events')}
+						label={__('Clear Cache', 'ucsc-blocks')}
 						onClick={clearCache}
 						disabled={!effectiveUrl || isLoading}
 					/>
@@ -385,41 +385,41 @@ export default function Edit( { attributes, setAttributes } ) {
 			</BlockControls>
 
 			<InspectorControls>
-				<PanelBody title={__('Event Settings', 'ucsc-events')} initialOpen={true}>
+				<PanelBody title={__('Event Settings', 'ucsc-blocks')} initialOpen={true}>
 					<FormTokenField
 						className="ucsc-events-organizers-field"
-						label={__('Organizers', 'ucsc-events')}
+						label={__('Organizers', 'ucsc-blocks')}
 						value={organizers.map((org) => org.name)}
 						suggestions={orgSuggestions.map((org) => org.name)}
 						onInputChange={setOrgSearch}
 						onChange={handleOrganizersChange}
 						__experimentalExpandOnFocus={true}
 						__experimentalShowHowTo={false}
-						help={__('Start typing to search organizers. Select at least one to display events.', 'ucsc-events')}
+						help={__('Start typing to search organizers. Select at least one to display events.', 'ucsc-blocks')}
 					/>
 
 					<RangeControl
-						label={__('Number of Events', 'ucsc-events')}
+						label={__('Number of Events', 'ucsc-blocks')}
 						value={itemCount}
 						onChange={(value) => setAttributes({ itemCount: value })}
 						min={1}
 						max={40}
-						help={__('Maximum number of events to display', 'ucsc-events')}
+						help={__('Maximum number of events to display', 'ucsc-blocks')}
 					/>
 
 					<SelectControl
-						label={__('Layout Style', 'ucsc-events')}
+						label={__('Layout Style', 'ucsc-blocks')}
 						value={layoutStyle}
 						options={layoutOptions}
 						onChange={(value) => setAttributes({ layoutStyle: value })}
-						help={__('Choose how events should be displayed', 'ucsc-events')}
+						help={__('Choose how events should be displayed', 'ucsc-blocks')}
 					/>
 
 					<ToggleControl
-						label={__('Hide repeating events', 'ucsc-events')}
+						label={__('Hide repeating events', 'ucsc-blocks')}
 						checked={hideRepeating}
 						onChange={(value) => setAttributes({ hideRepeating: value })}
-						help={__('Show only the next upcoming instance of each repeating event.', 'ucsc-events')}
+						help={__('Show only the next upcoming instance of each repeating event.', 'ucsc-blocks')}
 					/>
 
 					<div className="ucsc-events-cache-controls">
@@ -429,11 +429,11 @@ export default function Edit( { attributes, setAttributes } ) {
 							disabled={!effectiveUrl || isLoading}
 							isBusy={isLoading}
 						>
-							{__('Clear Cache', 'ucsc-events')}
+							{__('Clear Cache', 'ucsc-blocks')}
 						</Button>
 						{cacheCleared && (
 							<Notice status="success" isDismissible={false}>
-								{__('Cache cleared successfully!', 'ucsc-events')}
+								{__('Cache cleared successfully!', 'ucsc-blocks')}
 							</Notice>
 						)}
 					</div>
@@ -444,8 +444,8 @@ export default function Edit( { attributes, setAttributes } ) {
 				{!effectiveUrl && (
 					<div className="ucsc-events-placeholder">
 						<div className="ucsc-events-placeholder-content">
-							<h3>{__('UCSC Events', 'ucsc-events')}</h3>
-							<p>{__('Select one or more organizers in the block settings to display events.', 'ucsc-events')}</p>
+							<h3>{__('UCSC Events', 'ucsc-blocks')}</h3>
+							<p>{__('Select one or more organizers in the block settings to display events.', 'ucsc-blocks')}</p>
 						</div>
 					</div>
 				)}
@@ -453,7 +453,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				{effectiveUrl && isLoading && (
 					<div className="ucsc-events-loading">
 						<Spinner />
-						<span>{__('Loading items...', 'ucsc-events')}</span>
+						<span>{__('Loading items...', 'ucsc-blocks')}</span>
 					</div>
 				)}
 
@@ -465,7 +465,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{effectiveUrl && !isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{__('No upcoming events found for the selected organizers.', 'ucsc-events')}
+						{__('No upcoming events found for the selected organizers.', 'ucsc-blocks')}
 					</Notice>
 				)}
 
