@@ -108,6 +108,12 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 	};
 
+	// Root for the sibling /categories and /tags REST endpoints. Derive it from
+	// the configured events source, falling back to the default events endpoint
+	// so suggestions load even before an organizer is selected (the legacy
+	// `apiUrl` is empty in the normal organizer-based flow).
+	const taxonomyRoot = getApiRoot(apiUrl || EVENTS_ENDPOINT);
+
 	// Maps between category names (shown to editors) and slugs (stored/sent).
 	const slugToCategoryName = {};
 	const categoryNameToSlug = {};
@@ -116,9 +122,9 @@ export default function Edit( { attributes, setAttributes } ) {
 		categoryNameToSlug[option.name] = option.slug;
 	});
 
-	// Load the available event categories when the API URL changes.
+	// Load the available event categories when the taxonomy root changes.
 	useEffect(() => {
-		const root = getApiRoot(apiUrl);
+		const root = taxonomyRoot;
 		if (!root) {
 			setCategoryOptions([]);
 			return;
@@ -133,7 +139,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				if (cancelled || !data || !Array.isArray(data.categories)) return;
 				setCategoryOptions(
 					data.categories.map((category) => ({
-						name: category.name,
+						name: decodeEntities(category.name || ''),
 						slug: category.slug
 					}))
 				);
@@ -145,13 +151,13 @@ export default function Edit( { attributes, setAttributes } ) {
 		return () => {
 			cancelled = true;
 		};
-	}, [apiUrl]);
+	}, [taxonomyRoot]);
 
 	// Debounced tag search to feed the tag token field's suggestions.
 	const searchTags = (input) => {
 		clearTimeout(tagSearchTimeout.current);
 
-		const root = getApiRoot(apiUrl);
+		const root = taxonomyRoot;
 		if (!root || !input || input.length < 2) {
 			setTagSuggestions([]);
 			return;
