@@ -4,12 +4,22 @@
  * @see https://github.com/WordPress/gutenberg/blob/trunk/docs/reference-guides/block-api/block-metadata.md#render
  */
 
-$api_url = $attributes['apiUrl'] ?? '';
+$organizers = $attributes['organizers'] ?? array();
+$legacy_url = $attributes['apiUrl'] ?? '';
 $item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
 $hide_repeating = $attributes['hideRepeating'] ?? false;
 $categories = $attributes['categories'] ?? array();
 $tags = $attributes['tags'] ?? array();
+
+// Build the API URL from the selected organizers (falling back to a legacy URL
+// or the unfiltered campus feed).
+$organizer_ids = function_exists('ucsc_events_get_organizer_ids')
+	? ucsc_events_get_organizer_ids($organizers)
+	: array();
+$api_url = function_exists('ucsc_events_build_api_url')
+	? ucsc_events_build_api_url($organizer_ids, $legacy_url)
+	: $legacy_url;
 
 // Get the block wrapper attributes with layout class
 $wrapper_attributes = get_block_wrapper_attributes(array(
@@ -72,7 +82,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 	<?php if (empty($api_url) or empty($events)): ?>
 		<div class="ucsc-events-placeholder">
 			<div class="ucsc-events-placeholder-content">
-				<p><?php _e('Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-events'); ?></p>
+				<p><?php _e('Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-blocks'); ?></p>
 			</div>
 		</div>
 	<?php else: ?>
@@ -109,7 +119,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 						<?php if (isset($series_slugs[$event['slug'] ?? ''])): ?>
 							<div class="ucsc-event-series">
 								<span class="dashicons dashicons-controls-repeat"></span>
-								<?php _e('Series', 'ucsc-events'); ?>
+								<?php _e('Series', 'ucsc-blocks'); ?>
 							</div>
 						<?php endif; ?>
 

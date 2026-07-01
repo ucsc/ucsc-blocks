@@ -10,15 +10,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * UCSC Tribe Events REST API endpoints.
+ *
+ * Single source of truth for the base URLs, shared by the server-side renderer
+ * and the block editor (passed to JS via wp_localize_script). Filterable so a
+ * site can point the block at a different events source.
+ *
+ * @return array Associative array with 'events' and 'organizers' endpoint URLs.
+ */
+if ( ! function_exists( 'ucsc_events_get_api_endpoints' ) ) {
+	function ucsc_events_get_api_endpoints() {
+		return apply_filters(
+			'ucsc_events_api_endpoints',
+			array(
+				'events'     => 'https://events.ucsc.edu/wp-json/tribe/events/v1/events',
+				'organizers' => 'https://events.ucsc.edu/wp-json/tribe/events/v1/organizers',
+			)
+		);
+	}
+}
+
+/**
  * Enqueue scripts for the block editor
  */
 function ucsc_events_enqueue_block_editor_assets() {
+	$endpoints = ucsc_events_get_api_endpoints();
+
 	wp_localize_script(
 		'ucsc-events-editor-script',
 		'ucscEventsData',
 		array(
-			'nonce' => wp_create_nonce('ucsc_events_nonce'),
-			'ajaxUrl' => admin_url('admin-ajax.php')
+			'nonce'         => wp_create_nonce('ucsc_events_nonce'),
+			'ajaxUrl'       => admin_url('admin-ajax.php'),
+			'eventsUrl'     => $endpoints['events'],
+			'organizersUrl' => $endpoints['organizers'],
 		)
 	);
 }
@@ -41,6 +66,72 @@ function ucsc_events_enqueue_frontend_assets() {
 add_action( 'wp_enqueue_scripts', 'ucsc_events_enqueue_frontend_assets' );
 
 /**
+ * Build the events API URL from selected organizers.
+ *
+ * Organizers are filtered with the Tribe `organizer[]` query argument. When no
+ * organizers are selected, an optional legacy URL (from older blocks that stored
+ * a hand-built `apiUrl`) is used as a fallback; otherwise an empty string is
+ * returned so an unconfigured block renders a placeholder instead of the feed.
+ *
+ * IDs are sanitized and sorted so the resulting URL — and therefore the cache
+ * key derived from it — is deterministic regardless of selection order.
+ *
+ * @param array  $organizer_ids Organizer IDs to filter by.
+ * @param string $legacy_url    Optional legacy API URL for backward compatibility.
+ * @return string The events API URL to fetch, or '' when nothing is configured.
+ */
+if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
+	function ucsc_events_build_api_url( $organizer_ids, $legacy_url = '' ) {
+		$endpoints = ucsc_events_get_api_endpoints();
+		$base      = $endpoints['events'];
+
+		$organizer_ids = array_values( array_unique( array_filter( array_map( 'absint', (array) $organizer_ids ) ) ) );
+		sort( $organizer_ids );
+
+		if ( ! empty( $organizer_ids ) ) {
+			return add_query_arg( array( 'organizer' => $organizer_ids ), $base );
+		}
+
+		if ( ! empty( $legacy_url ) && filter_var( $legacy_url, FILTER_VALIDATE_URL ) ) {
+			return esc_url_raw( $legacy_url, array( 'http', 'https' ) );
+		}
+
+		return '';
+	}
+}
+
+/**
+ * Extract sanitized organizer IDs from a block's `organizers` attribute.
+ *
+ * The attribute is an array of `{ id, name }` objects supplied by the editor.
+ * Only the IDs are used server-side; names are display-only.
+ *
+ * @param mixed $organizers Raw organizers attribute value.
+ * @return int[] Sanitized organizer IDs.
+ */
+if ( ! function_exists( 'ucsc_events_get_organizer_ids' ) ) {
+	function ucsc_events_get_organizer_ids( $organizers ) {
+		if ( ! is_array( $organizers ) ) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ( $organizers as $organizer ) {
+			if ( is_array( $organizer ) && isset( $organizer['id'] ) ) {
+				$id = absint( $organizer['id'] );
+			} else {
+				$id = absint( $organizer );
+			}
+			if ( $id > 0 ) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
+	}
+}
+
+/**
  * Handle cache clearing AJAX request
  */
 function ucsc_events_clear_cache() {
@@ -56,7 +147,17 @@ function ucsc_events_clear_cache() {
 		return;
 	}
 
-	$api_url = isset($_POST['api_url']) ? sanitize_url( $_POST['api_url'] ) : '';
+	// Rebuild the API URL server-side from the submitted organizer IDs (and any
+	// legacy URL) so the cache key matches the one used during rendering.
+	$organizer_ids = array();
+	if ( isset( $_POST['organizers'] ) ) {
+		$decoded = json_decode( wp_unslash( $_POST['organizers'] ), true );
+		$organizer_ids = ucsc_events_get_organizer_ids( $decoded );
+	}
+
+	$legacy_url = isset( $_POST['api_url'] ) ? esc_url_raw( wp_unslash( $_POST['api_url'] ), array( 'http', 'https' ) ) : '';
+
+	$api_url = ucsc_events_build_api_url( $organizer_ids, $legacy_url );
 
 	// Mirror the fetch path so we target the same transient for this selection.
 	$categories = isset( $_POST['categories'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['categories'] ) ) : array();

@@ -1,0 +1,16 @@
+{
+  // markdownlint rules for this project.
+  // Full rule reference:
+  // https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+  "default": true,
+
+  // We don't hard-wrap prose, so don't flag long lines.
+  "MD013": false,
+
+  // Allow inline HTML (GitHub-style callouts/admonitions, <kbd>, etc.).
+  "MD033": false,
+
+  // Allow ordered lists numbered all "1." or sequential "1. 2. 3.".
+  // Lets a list restart at 1 after a code block without complaints.
+  "MD029": { "style": "one_or_ordered" }
+}
