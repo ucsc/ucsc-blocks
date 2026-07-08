@@ -17,8 +17,10 @@ $tags = $attributes['tags'] ?? array();
 $organizer_ids = function_exists('ucsc_events_get_organizer_ids')
 	? ucsc_events_get_organizer_ids($organizers)
 	: array();
+// Category/tag filters can drive a campus-wide fetch even without an organizer.
+$has_filters = !empty($categories) || !empty($tags);
 $api_url = function_exists('ucsc_events_build_api_url')
-	? ucsc_events_build_api_url($organizer_ids, $legacy_url)
+	? ucsc_events_build_api_url($organizer_ids, $legacy_url, $has_filters)
 	: $legacy_url;
 
 // Get the block wrapper attributes with layout class

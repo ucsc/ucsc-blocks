@@ -180,8 +180,9 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Build the events API URL from the selected organizers.
 	 *
 	 * Mirrors the server-side `ucsc_events_build_api_url()`: filter by organizer
-	 * when any are selected, fall back to a legacy hand-built URL, otherwise
-	 * return an empty string so the block shows a placeholder until configured.
+	 * when any are selected, fall back to a legacy hand-built URL, then to the
+	 * base campus feed when category/tag filters are set, otherwise return an
+	 * empty string so the block shows a placeholder until configured.
 	 */
 	const buildEventsUrl = () => {
 		if (organizers.length > 0) {
@@ -191,6 +192,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 		if (apiUrl) {
 			return apiUrl;
+		}
+		// No organizer selected, but category/tag filters can still drive a
+		// campus-wide fetch of the base events feed.
+		if (categories.length || tags.length) {
+			return EVENTS_ENDPOINT;
 		}
 		return '';
 	};
@@ -497,7 +503,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={handleOrganizersChange}
 						__experimentalExpandOnFocus={true}
 						__experimentalShowHowTo={false}
-						help={__('Start typing to search organizers. Select at least one to display events.', 'ucsc-blocks')}
+						help={__('Start typing to search organizers. Select organizers, or use the category/tag filters below, to display events.', 'ucsc-blocks')}
 					/>
 
 					<RangeControl
@@ -574,7 +580,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<div className="ucsc-events-placeholder">
 						<div className="ucsc-events-placeholder-content">
 							<h3>{__('UCSC Events', 'ucsc-blocks')}</h3>
-							<p>{__('Select one or more organizers in the block settings to display events.', 'ucsc-blocks')}</p>
+							<p>{__('Select one or more organizers, categories, or tags in the block settings to display events.', 'ucsc-blocks')}</p>
 						</div>
 					</div>
 				)}
@@ -594,7 +600,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{effectiveUrl && !isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{__('No upcoming events found for the selected organizers.', 'ucsc-blocks')}
+						{__('No upcoming events found for the selected filters.', 'ucsc-blocks')}
 					</Notice>
 				)}
 

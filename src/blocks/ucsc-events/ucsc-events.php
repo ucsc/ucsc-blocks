@@ -70,18 +70,21 @@ add_action( 'wp_enqueue_scripts', 'ucsc_events_enqueue_frontend_assets' );
  *
  * Organizers are filtered with the Tribe `organizer[]` query argument. When no
  * organizers are selected, an optional legacy URL (from older blocks that stored
- * a hand-built `apiUrl`) is used as a fallback; otherwise an empty string is
- * returned so an unconfigured block renders a placeholder instead of the feed.
+ * a hand-built `apiUrl`) is used as a fallback. Failing that, if category/tag
+ * filters are active the base campus feed is returned so those filters can drive
+ * a campus-wide fetch; otherwise an empty string is returned so an unconfigured
+ * block renders a placeholder instead of the feed.
  *
  * IDs are sanitized and sorted so the resulting URL — and therefore the cache
  * key derived from it — is deterministic regardless of selection order.
  *
  * @param array  $organizer_ids Organizer IDs to filter by.
  * @param string $legacy_url    Optional legacy API URL for backward compatibility.
+ * @param bool   $has_filters   Whether category/tag filters are active.
  * @return string The events API URL to fetch, or '' when nothing is configured.
  */
 if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
-	function ucsc_events_build_api_url( $organizer_ids, $legacy_url = '' ) {
+	function ucsc_events_build_api_url( $organizer_ids, $legacy_url = '', $has_filters = false ) {
 		$endpoints = ucsc_events_get_api_endpoints();
 		$base      = $endpoints['events'];
 
@@ -94,6 +97,12 @@ if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
 
 		if ( ! empty( $legacy_url ) && filter_var( $legacy_url, FILTER_VALIDATE_URL ) ) {
 			return esc_url_raw( $legacy_url, array( 'http', 'https' ) );
+		}
+
+		// No organizer or legacy URL, but category/tag filters can still fetch
+		// the campus-wide feed (filters are applied by ucsc_events_fetch_data).
+		if ( $has_filters ) {
+			return $base;
 		}
 
 		return '';
@@ -157,11 +166,12 @@ function ucsc_events_clear_cache() {
 
 	$legacy_url = isset( $_POST['api_url'] ) ? esc_url_raw( wp_unslash( $_POST['api_url'] ), array( 'http', 'https' ) ) : '';
 
-	$api_url = ucsc_events_build_api_url( $organizer_ids, $legacy_url );
-
 	// Mirror the fetch path so we target the same transient for this selection.
 	$categories = isset( $_POST['categories'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['categories'] ) ) : array();
 	$tags       = isset( $_POST['tags'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['tags'] ) ) : array();
+
+	$has_filters = ! empty( $categories ) || ! empty( $tags );
+	$api_url     = ucsc_events_build_api_url( $organizer_ids, $legacy_url, $has_filters );
 
 	if ( ! empty( $api_url ) ) {
 		$cache_key = ucsc_events_cache_key( $api_url, $categories, $tags );
