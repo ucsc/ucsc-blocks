@@ -185,6 +185,253 @@ function ucsc_events_clear_cache() {
 add_action( 'wp_ajax_ucsc_events_clear_cache', 'ucsc_events_clear_cache' );
 
 /**
+ * AJAX: return processed events for the block editor preview.
+ *
+ * The editor cannot fetch the events API directly. That is a cross-origin
+ * request, and the CDN in front of the API caches responses without varying on
+ * the Origin header, so cached copies lack an Access-Control-Allow-Origin header
+ * and the browser blocks them (intermittently, depending on what is cached).
+ *
+ * Proxying through the server sidesteps CORS entirely and reuses the same fetch,
+ * sanitization, and transient cache as the frontend renderer, so the editor
+ * preview matches the published output. Editor-only: requires the events nonce
+ * and edit_posts capability.
+ */
+function ucsc_events_preview() {
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['nonce'] ), 'ucsc_events_nonce' ) ) {
+		wp_send_json_error( array( 'message' => 'Security check failed' ) );
+		return;
+	}
+
+	if ( ! current_user_can( 'edit_posts' ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		return;
+	}
+
+	// Rebuild the request from the block's attributes, mirroring render.php.
+	$organizer_ids = array();
+	if ( isset( $_POST['organizers'] ) ) {
+		$decoded       = json_decode( wp_unslash( $_POST['organizers'] ), true );
+		$organizer_ids = ucsc_events_get_organizer_ids( $decoded );
+	}
+
+	$legacy_url = isset( $_POST['api_url'] ) ? esc_url_raw( wp_unslash( $_POST['api_url'] ), array( 'http', 'https' ) ) : '';
+	$categories = isset( $_POST['categories'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['categories'] ) ) : array();
+	$tags       = isset( $_POST['tags'] ) ? ucsc_events_sanitize_slugs( wp_unslash( $_POST['tags'] ) ) : array();
+
+	$has_filters = ! empty( $categories ) || ! empty( $tags );
+	$api_url     = ucsc_events_build_api_url( $organizer_ids, $legacy_url, $has_filters );
+
+	// Nothing configured — return an empty set so the editor shows its placeholder.
+	if ( empty( $api_url ) ) {
+		wp_send_json_success( array( 'events' => array() ) );
+		return;
+	}
+
+	// Returns the processed, cached event list (up to 50); the editor applies the
+	// item count, de-duplication, and series detection client-side.
+	$events = ucsc_events_fetch_data( $api_url, $categories, $tags );
+
+	wp_send_json_success( array( 'events' => $events ) );
+}
+add_action( 'wp_ajax_ucsc_events_preview', 'ucsc_events_preview' );
+
+/**
+ * Shared nonce + capability guard for the editor's AJAX lookups.
+ *
+ * @return bool True when the request is a valid editor request.
+ */
+if ( ! function_exists( 'ucsc_events_verify_editor_request' ) ) {
+	function ucsc_events_verify_editor_request() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['nonce'] ), 'ucsc_events_nonce' ) ) {
+			return false;
+		}
+
+		return current_user_can( 'edit_posts' );
+	}
+}
+
+/**
+ * Derive a sibling Tribe REST endpoint (e.g. categories, tags) from the events
+ * endpoint, so all lookups share the single filterable source of truth.
+ *
+ * @param string $taxonomy Route name, e.g. 'categories' or 'tags'.
+ * @return string The derived endpoint URL.
+ */
+if ( ! function_exists( 'ucsc_events_get_taxonomy_endpoint' ) ) {
+	function ucsc_events_get_taxonomy_endpoint( $taxonomy ) {
+		$endpoints = ucsc_events_get_api_endpoints();
+
+		return preg_replace( '#/events/?$#', '/' . $taxonomy, $endpoints['events'] );
+	}
+}
+
+/**
+ * Fetch and JSON-decode a Tribe REST endpoint server-side for editor lookups.
+ *
+ * @param string $url Endpoint URL to fetch.
+ * @return array|WP_Error Decoded response array, or WP_Error on failure.
+ */
+if ( ! function_exists( 'ucsc_events_remote_get_json' ) ) {
+	function ucsc_events_remote_get_json( $url ) {
+		if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error( 'invalid_url', 'Invalid URL' );
+		}
+
+		$response = wp_remote_get( $url, array(
+			'timeout'   => 8,
+			'headers'   => array(
+				'User-Agent' => 'UCSC Events Block/1.0',
+				'Accept'     => 'application/json',
+			),
+			'sslverify' => true,
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return new WP_Error( 'bad_status', 'Unexpected response code' );
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $data ) ) {
+			return new WP_Error( 'invalid_json', 'Invalid JSON response' );
+		}
+
+		return $data;
+	}
+}
+
+/**
+ * AJAX: organizer autocomplete for the editor, proxied server-side.
+ *
+ * Like the preview, these lookups avoid a direct cross-origin fetch so they are
+ * not affected by the events API CDN's origin-agnostic CORS caching.
+ */
+function ucsc_events_search_organizers() {
+	if ( ! ucsc_events_verify_editor_request() ) {
+		wp_send_json_error( array( 'organizers' => array() ) );
+		return;
+	}
+
+	$search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
+	if ( strlen( $search ) < 2 ) {
+		wp_send_json_success( array( 'organizers' => array() ) );
+		return;
+	}
+
+	$endpoints = ucsc_events_get_api_endpoints();
+	$url       = add_query_arg(
+		array(
+			'search'   => $search,
+			'per_page' => 20,
+		),
+		$endpoints['organizers']
+	);
+
+	$data = ucsc_events_remote_get_json( $url );
+	if ( is_wp_error( $data ) || empty( $data['organizers'] ) || ! is_array( $data['organizers'] ) ) {
+		wp_send_json_success( array( 'organizers' => array() ) );
+		return;
+	}
+
+	// Normalize to { id, name } and drop duplicate names. Names are sanitized as
+	// external text; the editor decodes HTML entities for display.
+	$organizers = array();
+	$seen       = array();
+	foreach ( $data['organizers'] as $item ) {
+		$id   = isset( $item['id'] ) ? absint( $item['id'] ) : 0;
+		$name = isset( $item['organizer'] ) ? sanitize_text_field( $item['organizer'] ) : '';
+		if ( ! $id || '' === $name || isset( $seen[ $name ] ) ) {
+			continue;
+		}
+		$seen[ $name ] = true;
+		$organizers[]  = array(
+			'id'   => $id,
+			'name' => $name,
+		);
+	}
+
+	wp_send_json_success( array( 'organizers' => $organizers ) );
+}
+add_action( 'wp_ajax_ucsc_events_search_organizers', 'ucsc_events_search_organizers' );
+
+/**
+ * AJAX: list available event categories for the editor, proxied server-side.
+ */
+function ucsc_events_get_categories() {
+	if ( ! ucsc_events_verify_editor_request() ) {
+		wp_send_json_error( array( 'categories' => array() ) );
+		return;
+	}
+
+	$url  = add_query_arg( array( 'per_page' => 100 ), ucsc_events_get_taxonomy_endpoint( 'categories' ) );
+	$data = ucsc_events_remote_get_json( $url );
+	if ( is_wp_error( $data ) || empty( $data['categories'] ) || ! is_array( $data['categories'] ) ) {
+		wp_send_json_success( array( 'categories' => array() ) );
+		return;
+	}
+
+	$categories = array();
+	foreach ( $data['categories'] as $item ) {
+		$slug = isset( $item['slug'] ) ? sanitize_title( $item['slug'] ) : '';
+		if ( '' === $slug ) {
+			continue;
+		}
+		$categories[] = array(
+			'name' => isset( $item['name'] ) ? sanitize_text_field( $item['name'] ) : $slug,
+			'slug' => $slug,
+		);
+	}
+
+	wp_send_json_success( array( 'categories' => $categories ) );
+}
+add_action( 'wp_ajax_ucsc_events_get_categories', 'ucsc_events_get_categories' );
+
+/**
+ * AJAX: tag autocomplete for the editor, proxied server-side.
+ */
+function ucsc_events_search_tags() {
+	if ( ! ucsc_events_verify_editor_request() ) {
+		wp_send_json_error( array( 'tags' => array() ) );
+		return;
+	}
+
+	$search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
+	if ( strlen( $search ) < 2 ) {
+		wp_send_json_success( array( 'tags' => array() ) );
+		return;
+	}
+
+	$url  = add_query_arg(
+		array(
+			'search'   => $search,
+			'per_page' => 10,
+		),
+		ucsc_events_get_taxonomy_endpoint( 'tags' )
+	);
+
+	$data = ucsc_events_remote_get_json( $url );
+	if ( is_wp_error( $data ) || empty( $data['tags'] ) || ! is_array( $data['tags'] ) ) {
+		wp_send_json_success( array( 'tags' => array() ) );
+		return;
+	}
+
+	$tags = array();
+	foreach ( $data['tags'] as $item ) {
+		$slug = isset( $item['slug'] ) ? sanitize_title( $item['slug'] ) : '';
+		if ( '' !== $slug ) {
+			$tags[] = $slug;
+		}
+	}
+
+	wp_send_json_success( array( 'tags' => array_values( array_unique( $tags ) ) ) );
+}
+add_action( 'wp_ajax_ucsc_events_search_tags', 'ucsc_events_search_tags' );
+
+/**
  * Sanitize a list of taxonomy slugs from external/editor input.
  *
  * Accepts either an array of slugs or a comma-separated string. Each value is
