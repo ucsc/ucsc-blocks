@@ -443,7 +443,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			</BlockControls>
 
 			<InspectorControls>
-				<PanelBody title={__('Event Settings', 'ucsc-blocks')} initialOpen={true}>
+				<PanelBody className="ucsc-events-settings-panel" title={__('Event Settings', 'ucsc-blocks')} initialOpen={true}>
 					<FormTokenField
 						className="ucsc-events-organizers-field"
 						label={__('Organizers', 'ucsc-blocks')}
