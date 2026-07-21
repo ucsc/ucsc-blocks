@@ -28,9 +28,8 @@ import {
 	ToolbarButton,
 	Spinner
 } from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
-import { dateI18n } from '@wordpress/date';
 import { decodeEntities } from '@wordpress/html-entities';
 
 /**
@@ -53,21 +52,23 @@ import './editor.scss';
  *
  * @return {Element} Element to render.
  */
-// Base UCSC Tribe Events REST endpoints. Provided by PHP via wp_localize_script
-// (single source of truth); the literals are defensive fallbacks only.
+// Base UCSC Tribe Events endpoint. Used only to decide whether the block is
+// configured (see buildEventsUrl); all data is fetched server-side via the
+// same-origin AJAX proxies below, so the events API is never called from the
+// browser (avoiding its cross-origin CDN/CORS caching issues).
 const EVENTS_ENDPOINT =
 	window.ucscEventsData?.eventsUrl ||
 	'https://events.ucsc.edu/wp-json/tribe/events/v1/events';
-const ORGANIZERS_ENDPOINT =
-	window.ucscEventsData?.organizersUrl ||
-	'https://events.ucsc.edu/wp-json/tribe/events/v1/organizers';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { organizers = [], apiUrl, itemCount, layoutStyle, hideRepeating } = attributes;
+	const { organizers = [], apiUrl, itemCount, layoutStyle, hideRepeating, categories, tags } = attributes;
 	const [previewData, setPreviewData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
 	const [cacheCleared, setCacheCleared] = useState(false);
+	const [categoryOptions, setCategoryOptions] = useState([]);
+	const [tagSuggestions, setTagSuggestions] = useState([]);
+	const tagSearchTimeout = useRef();
 
 	// Organizer autocomplete state.
 	const [orgSearch, setOrgSearch] = useState('');
@@ -83,12 +84,91 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __('Cards', 'ucsc-blocks'), value: 'cards' }
 	];
 
+	// Convert a label into a slug, mirroring WordPress's sanitize_title() closely
+	// enough for free-form tokens the user types that aren't in the suggestion list.
+	const slugify = (value) =>
+		String(value)
+			.toLowerCase()
+			.trim()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '');
+
+	// POST to a same-origin admin-ajax action. Organizer/category/tag lookups and
+	// the events preview are all proxied through the server so the browser never
+	// makes a cross-origin request to the events API. Returns the handler's
+	// `data` payload on success, or null on any failure (callers fall back to an
+	// empty result).
+	const ajaxLookup = async (action, params = {}, signal) => {
+		const formData = new FormData();
+		formData.append('action', action);
+		formData.append('nonce', window.ucscEventsData?.nonce || '');
+		Object.entries(params).forEach(([key, value]) => formData.append(key, value));
+
+		const response = await fetch(
+			window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php',
+			{ method: 'POST', body: formData, signal }
+		);
+		const result = await response.json();
+		return result?.success ? result.data : null;
+	};
+
+	// Maps between category names (shown to editors) and slugs (stored/sent).
+	const slugToCategoryName = {};
+	const categoryNameToSlug = {};
+	categoryOptions.forEach((option) => {
+		slugToCategoryName[option.slug] = option.name;
+		categoryNameToSlug[option.name] = option.slug;
+	});
+
+	// Load the available event categories once on mount (they don't depend on the
+	// selected organizer).
+	useEffect(() => {
+		let cancelled = false;
+		ajaxLookup('ucsc_events_get_categories')
+			.then((data) => {
+				if (cancelled || !data || !Array.isArray(data.categories)) return;
+				setCategoryOptions(
+					data.categories.map((category) => ({
+						name: decodeEntities(category.name || ''),
+						slug: category.slug
+					}))
+				);
+			})
+			.catch(() => {
+				if (!cancelled) setCategoryOptions([]);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// Debounced tag search to feed the tag token field's suggestions.
+	const searchTags = (input) => {
+		clearTimeout(tagSearchTimeout.current);
+
+		if (!input || input.length < 2) {
+			setTagSuggestions([]);
+			return;
+		}
+
+		tagSearchTimeout.current = setTimeout(() => {
+			ajaxLookup('ucsc_events_search_tags', { search: input })
+				.then((data) => {
+					if (!data || !Array.isArray(data.tags)) return;
+					setTagSuggestions(data.tags);
+				})
+				.catch(() => setTagSuggestions([]));
+		}, 500);
+	};
+
 	/**
 	 * Build the events API URL from the selected organizers.
 	 *
 	 * Mirrors the server-side `ucsc_events_build_api_url()`: filter by organizer
-	 * when any are selected, fall back to a legacy hand-built URL, otherwise
-	 * return an empty string so the block shows a placeholder until configured.
+	 * when any are selected, fall back to a legacy hand-built URL, then to the
+	 * base campus feed when category/tag filters are set, otherwise return an
+	 * empty string so the block shows a placeholder until configured.
 	 */
 	const buildEventsUrl = () => {
 		if (organizers.length > 0) {
@@ -98,6 +178,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 		if (apiUrl) {
 			return apiUrl;
+		}
+		// No organizer selected, but category/tag filters can still drive a
+		// campus-wide fetch of the base events feed.
+		if (categories.length || tags.length) {
+			return EVENTS_ENDPOINT;
 		}
 		return '';
 	};
@@ -112,33 +197,23 @@ export default function Edit( { attributes, setAttributes } ) {
 			return;
 		}
 
+		const controller = new AbortController();
 		const timeoutId = setTimeout(async () => {
 			try {
-				const url = new URL(ORGANIZERS_ENDPOINT);
-				url.searchParams.set('search', query);
-				url.searchParams.set('per_page', 20);
+				const data = await ajaxLookup(
+					'ucsc_events_search_organizers',
+					{ search: query },
+					controller.signal
+				);
+				const list = data && Array.isArray(data.organizers) ? data.organizers : [];
 
-				const response = await fetch(url.toString(), {
-					headers: { 'Accept': 'application/json' },
-					signal: AbortSignal.timeout(8000)
-				});
-
-				if (!response.ok) {
-					setOrgSuggestions([]);
-					return;
-				}
-
-				const data = await response.json();
-				const list = Array.isArray(data.organizers) ? data.organizers : [];
-
-				// Map to { id, name } and drop duplicate display names so each
-				// suggestion is unambiguous in the token field.
+				// Drop duplicate display names so each suggestion is unambiguous in
+				// the token field. Names may arrive HTML-encoded (e.g. "Men&#8217;s");
+				// decode so tokens display the real characters.
 				const seen = new Set();
 				const mapped = [];
 				list.forEach((item) => {
-					// Organizer names arrive HTML-encoded (e.g. "Men&#8217;s");
-					// decode so tokens display the real characters.
-					const name = decodeEntities(item.organizer || '');
+					const name = decodeEntities(item.name || '');
 					if (!name || !item.id || seen.has(name)) return;
 					seen.add(name);
 					mapped.push({ id: item.id, name });
@@ -150,7 +225,10 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 		}, 400);
 
-		return () => clearTimeout(timeoutId);
+		return () => {
+			clearTimeout(timeoutId);
+			controller.abort();
+		};
 	}, [orgSearch]);
 
 	/**
@@ -170,7 +248,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		setAttributes({ organizers: next });
 	};
 
-	// Fetch preview data when the effective URL changes (debounced).
+	// Fetch preview data when the effective URL, categories, or tags change (debounced).
 	// Always fetches 50 events; itemCount is applied locally when rendering.
 	useEffect(() => {
 		// Nothing configured yet — show the placeholder, don't fetch.
@@ -187,8 +265,15 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		// Cleanup function to cancel the timeout if the URL changes again
 		return () => clearTimeout(timeoutId);
-	}, [effectiveUrl]);
+	}, [effectiveUrl, categories.join(','), tags.join(',')]);
 
+	// Load the preview through a same-origin AJAX proxy rather than fetching the
+	// events API directly. The API sits behind a CDN that caches responses without
+	// varying on Origin, so a direct cross-origin fetch intermittently hits a
+	// cached copy with no CORS header and is blocked by the browser. The proxy
+	// (ucsc_events_preview) fetches server-side and returns events already
+	// processed into the render shape, sharing the frontend's cache so the preview
+	// matches the published output.
 	const fetchPreviewData = async () => {
 		if (!effectiveUrl) return;
 
@@ -196,62 +281,33 @@ export default function Edit( { attributes, setAttributes } ) {
 		setError('');
 
 		try {
-			// Basic URL validation
-			let url;
-			try {
-				url = new URL(effectiveUrl);
-			} catch {
-				throw new Error(__('Please enter a valid URL', 'ucsc-blocks'));
-			}
+			const formData = new FormData();
+			formData.append('action', 'ucsc_events_preview');
+			formData.append('organizers', JSON.stringify(organizers.map((org) => org.id)));
+			formData.append('api_url', apiUrl || '');
+			formData.append('categories', categories.join(','));
+			formData.append('tags', tags.join(','));
+			formData.append('nonce', window.ucscEventsData?.nonce || '');
 
-			url.searchParams.set('per_page', 50);
-			url.searchParams.set('starts_after', 'yesterday');
-
-			const response = await fetch(url.toString(), {
-				method: 'GET',
-				headers: {
-					'Accept': 'application/json',
-					'Content-Type': 'application/json'
-				},
-				signal: AbortSignal.timeout(8000) // 8 second timeout
+			const response = await fetch(window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				body: formData,
+				signal: AbortSignal.timeout(10000)
 			});
-			
-			if (!response.ok) {
-				if (response.status === 404) {
-					throw new Error(__('API endpoint not found. Please check the URL.', 'ucsc-blocks'));
-				} else if (response.status === 403) {
-					throw new Error(__('Access denied to the API endpoint.', 'ucsc-blocks'));
-				} else {
-					throw new Error(__('Failed to fetch data from API. Status: ' + response.status, 'ucsc-blocks'));
-				}
+
+			const result = await response.json();
+
+			if (!result.success) {
+				throw new Error(result.data?.message || __('Failed to load the events preview.', 'ucsc-blocks'));
 			}
 
-			const fetched = await response.json();
-			const data = fetched.events;
-			
-			if (!Array.isArray(data)) {
-				throw new Error(__('Invalid API response format. Expected an object with array of events.', 'ucsc-blocks'));
-			}
-
-			if (data.length === 0) {
-				setPreviewData([]);
-				return;
-			}
-
-			const processedData = data.map(item => ({
-				title: item.title || __('Untitled', 'ucsc-blocks'),
-				organizer: item.organizer?.organizer || '',
-				date: dateI18n('F, j, Y', item.start_date) || '',
-				venue: item.venue?.venue || '',
-				featured_image: item.image?.url || '',
-				link: item.url || '',
-				slug: item.slug || ''
-			}));
-
-			setPreviewData(processedData);
+			// The server returns events already in the render shape
+			// ({ title, date, venue, featured_image, link, slug }).
+			const data = Array.isArray(result.data?.events) ? result.data.events : [];
+			setPreviewData(data);
 
 		} catch (err) {
-			if (err.name === 'AbortError') {
+			if (err.name === 'AbortError' || err.name === 'TimeoutError') {
 				setError(__('Request timeout. Please try again.', 'ucsc-blocks'));
 			} else {
 				setError(err.message);
@@ -274,6 +330,8 @@ export default function Edit( { attributes, setAttributes } ) {
 			// exact URL used as the cache key.
 			formData.append('organizers', JSON.stringify(organizers.map((org) => org.id)));
 			formData.append('api_url', apiUrl || '');
+			formData.append('categories', categories.join(','));
+			formData.append('tags', tags.join(','));
 			formData.append('nonce', window.ucscEventsData?.nonce || '');
 
 			const response = await fetch(window.ucscEventsData?.ajaxUrl || '/wp-admin/admin-ajax.php', {
@@ -385,7 +443,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			</BlockControls>
 
 			<InspectorControls>
-				<PanelBody title={__('Event Settings', 'ucsc-blocks')} initialOpen={true}>
+				<PanelBody className="ucsc-events-settings-panel" title={__('Event Settings', 'ucsc-blocks')} initialOpen={true}>
 					<FormTokenField
 						className="ucsc-events-organizers-field"
 						label={__('Organizers', 'ucsc-blocks')}
@@ -395,7 +453,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={handleOrganizersChange}
 						__experimentalExpandOnFocus={true}
 						__experimentalShowHowTo={false}
-						help={__('Start typing to search organizers. Select at least one to display events.', 'ucsc-blocks')}
+						help={__('Start typing to search organizers. Select organizers, or use the category/tag filters below, to display events.', 'ucsc-blocks')}
 					/>
 
 					<RangeControl
@@ -422,6 +480,33 @@ export default function Edit( { attributes, setAttributes } ) {
 						help={__('Show only the next upcoming instance of each repeating event.', 'ucsc-blocks')}
 					/>
 
+					<FormTokenField
+						label={__('Filter by Category', 'ucsc-blocks')}
+						value={categories.map((slug) => slugToCategoryName[slug] || slug)}
+						suggestions={categoryOptions.map((option) => option.name)}
+						onChange={(tokens) => {
+							const slugs = tokens.map(
+								(token) => categoryNameToSlug[token] || slugify(token)
+							);
+							setAttributes({ categories: [...new Set(slugs)] });
+						}}
+						__experimentalExpandOnFocus
+						help={__('Show only events in the selected categories.', 'ucsc-blocks')}
+					/>
+
+					<FormTokenField
+						label={__('Filter by Tag', 'ucsc-blocks')}
+						value={tags}
+						suggestions={tagSuggestions}
+						onInputChange={searchTags}
+						onChange={(tokens) => {
+							const slugs = tokens.map((token) => slugify(token)).filter(Boolean);
+							setAttributes({ tags: [...new Set(slugs)] });
+						}}
+						__experimentalExpandOnFocus
+						help={__('Type to search tags, then select to filter events.', 'ucsc-blocks')}
+					/>
+
 					<div className="ucsc-events-cache-controls">
 						<Button
 							variant="secondary"
@@ -445,7 +530,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<div className="ucsc-events-placeholder">
 						<div className="ucsc-events-placeholder-content">
 							<h3>{__('UCSC Events', 'ucsc-blocks')}</h3>
-							<p>{__('Select one or more organizers in the block settings to display events.', 'ucsc-blocks')}</p>
+							<p>{__('Select one or more organizers, categories, or tags in the block settings to display events.', 'ucsc-blocks')}</p>
 						</div>
 					</div>
 				)}
@@ -465,7 +550,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{effectiveUrl && !isLoading && !error && displayData.length === 0 && (
 					<Notice status="warning" isDismissible={false}>
-						{__('No upcoming events found for the selected organizers.', 'ucsc-blocks')}
+						{__('No upcoming events found for the selected filters.', 'ucsc-blocks')}
 					</Notice>
 				)}
 

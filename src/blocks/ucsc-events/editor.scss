@@ -3,7 +3,8 @@
  * The following styles get applied inside the editor only.
  */
 
-.wp-block-telex-ucsc-events {
+// Block canvas (the editor preview inside the post).
+.wp-block-ucsc-events {
 	// Editor-specific placeholder styling
 	.ucsc-events-placeholder {
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -19,17 +20,6 @@
 		}
 	}
 
-	// Cache controls styling
-	.ucsc-events-cache-controls {
-		margin-top: 1rem;
-		padding-top: 1rem;
-		border-top: 1px solid #ddd;
-
-		.components-notice {
-			margin-top: 0.5rem;
-		}
-	}
-
 	// Loading state in editor
 	.ucsc-events-loading {
 		background: #f8f9fa;
@@ -42,16 +32,26 @@
 	}
 }
 
-// Organizers token field needs breathing room before the next control.
-.ucsc-events-organizers-field {
-	margin-bottom: 1.5rem;
-}
+// Event Settings inspector panel (renders in the editor sidebar, not the canvas).
+.ucsc-events-settings-panel {
+	// Uniform vertical spacing between the panel's controls so the fields don't
+	// crowd each other. Targets the panel body's direct child controls and leaves
+	// the collapsible title untouched.
+	> *:not(.components-panel__body-title) {
+		margin-bottom: 1.5rem;
+	}
 
-// Inspector controls styling
-.ucsc-events-inspector-controls {
-	.components-panel__body {
-		.components-base-control {
-			margin-bottom: 1rem;
+	> *:not(.components-panel__body-title):last-child {
+		margin-bottom: 0;
+	}
+
+	// Cache controls, set off from the filters above by a divider.
+	.ucsc-events-cache-controls {
+		padding-top: 1rem;
+		border-top: 1px solid #ddd;
+
+		.components-notice {
+			margin-top: 0.5rem;
 		}
 	}
 }

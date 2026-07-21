@@ -9,14 +9,18 @@ $legacy_url = $attributes['apiUrl'] ?? '';
 $item_count = $attributes['itemCount'] ?? 6;
 $layout_style = $attributes['layoutStyle'] ?? 'list';
 $hide_repeating = $attributes['hideRepeating'] ?? false;
+$categories = $attributes['categories'] ?? array();
+$tags = $attributes['tags'] ?? array();
 
 // Build the API URL from the selected organizers (falling back to a legacy URL
 // or the unfiltered campus feed).
 $organizer_ids = function_exists('ucsc_events_get_organizer_ids')
 	? ucsc_events_get_organizer_ids($organizers)
 	: array();
+// Category/tag filters can drive a campus-wide fetch even without an organizer.
+$has_filters = !empty($categories) || !empty($tags);
 $api_url = function_exists('ucsc_events_build_api_url')
-	? ucsc_events_build_api_url($organizer_ids, $legacy_url)
+	? ucsc_events_build_api_url($organizer_ids, $legacy_url, $has_filters)
 	: $legacy_url;
 
 // Get the block wrapper attributes with layout class
@@ -29,7 +33,7 @@ $events = array();
 $series_slugs = array();
 if (!empty($api_url)) {
 	if (function_exists('ucsc_events_fetch_data')) {
-		$events = ucsc_events_fetch_data($api_url);
+		$events = ucsc_events_fetch_data($api_url, $categories, $tags);
 
 		// Identify slugs that appear more than once (i.e. repeating/series events).
 		// Built from the full dataset before any filtering or slicing.

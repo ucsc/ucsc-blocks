@@ -35,6 +35,20 @@
 		"hideRepeating": {
 			"type": "boolean",
 			"default": false
+		},
+		"categories": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"tags": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
 		}
 	},
 	"supports": {
