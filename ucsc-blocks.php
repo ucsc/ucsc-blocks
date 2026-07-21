@@ -22,17 +22,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin updates via GitHub releases.
  *
+ * Update checks only matter in the dashboard and during cron, so skip the
+ * work on front-end requests. wp_is_auto_update_enabled_for_type() lives in
+ * an admin-only file, so make sure it's loaded before calling it; it returns
+ * false whenever the site has disabled updates (AUTOMATIC_UPDATER_DISABLED /
+ * WP_AUTO_UPDATE_CORE constants, automatic_updater_disabled / auto_update_plugin
+ * filters, host overrides, etc.).
+ *
  * @see https://github.com/YahnisElsts/plugin-update-checker
  */
-require_once __DIR__ . '/vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php';
+if ( ( is_admin() || wp_doing_cron() ) && file_exists( __DIR__ . '/vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php' ) ) {
+	if ( ! function_exists( 'wp_is_auto_update_enabled_for_type' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/update.php';
+	}
 
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+	if ( wp_is_auto_update_enabled_for_type( 'plugin' ) ) {
+		require_once __DIR__ . '/vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php';
 
-PucFactory::buildUpdateChecker(
-	'https://github.com/ucsc/ucsc-blocks/',
-	__FILE__,
-	'ucsc-blocks'
-);
+		$ucsc_blocks_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+			'https://github.com/ucsc/ucsc-blocks/',
+			__FILE__,
+			'ucsc-blocks'
+		);
+		// Use the release asset (ucsc-blocks.zip) instead of the source archive.
+		$ucsc_blocks_update_checker->getVcsApi()->enableReleaseAssets( '/ucsc-blocks\.zip/' );
+	}
+}
 
 /**
  * Include block-specific PHP files.
