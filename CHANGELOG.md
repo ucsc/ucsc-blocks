@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [3.0.0](https://github.com/ucsc/ucsc-blocks/compare/v2.0.0...v3.0.0) (2026-07-21)
+
+
+### Features
+
+* ✨ Filter events by category/tag without an organizer ([#13](https://github.com/ucsc/ucsc-blocks/issues/13)) ([42d473a](https://github.com/ucsc/ucsc-blocks/commit/42d473aa47a30462ef48df88fcce800309a76f05))
+* ✨ Show placeholder until an organizer is selected ([#8](https://github.com/ucsc/ucsc-blocks/issues/8)) ([4aa4257](https://github.com/ucsc/ucsc-blocks/commit/4aa4257d0ecfb07382432e4f16a89b9b031502f7))
+
+
+### Bug Fixes
+
+* 🐛 Load category/tag suggestions from the events endpoint ([#13](https://github.com/ucsc/ucsc-blocks/issues/13)) ([e5f2934](https://github.com/ucsc/ucsc-blocks/commit/e5f2934f2948565f7f901f5340dd812a98bef480))
+* 🐛 Proxy editor events lookups server-side to avoid CORS failures ([#13](https://github.com/ucsc/ucsc-blocks/issues/13)) ([89e0136](https://github.com/ucsc/ucsc-blocks/commit/89e01360196b517ae9cb830c55925e5e40654261))
+* 🐛 Use the ucsc-blocks text domain in the events block ([21e8d49](https://github.com/ucsc/ucsc-blocks/commit/21e8d492bc70b8dcf5fdba6bb48bb8964b1fed75))
+* 📝 Only check for updates when user is admin and site allows it ([fa4536d](https://github.com/ucsc/ucsc-blocks/commit/fa4536d150e0b04e39b4a86784728ae548fceb75))
+
 ## [2.0.0](https://github.com/ucsc/ucsc-blocks/compare/v1.2.0...v2.0.0) (2026-05-08)
 
 ## [1.2.0](https://github.com/ucsc/ucsc-blocks/compare/v1.1.4...v1.2.0) (2025-11-07)
