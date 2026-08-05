@@ -1,0 +1,199 @@
+# Continuous integration — runs on every pull request.
+#
+# release.yml only fires on v*.*.* tags, so before this workflow nothing
+# validated a pull request: both the PHPUnit harness and the Jest suite
+# existed but were never executed. See issue #17.
+#
+# The PHPUnit suite is unit-level: tests/bootstrap.php stubs WordPress, so no
+# WordPress install and no database are needed here. Set WP_TESTS_DIR locally
+# to run the same suite inside a real WordPress test suite instead.
+#
+# The package job guards the distributable. Unlike the sibling plugins in this
+# org, ucsc-blocks has a webpack build, and the build is load-bearing:
+# ucsc-blocks.php requires block PHP from build/blocks/, and it is
+# `wp-scripts build --webpack-copy-php` that puts it there. If that flag ever
+# regresses, render.php and <block-name>.php stop being copied, every block
+# stops registering, and nothing notices until a release tag has shipped.
+#
+# Linting is deliberately absent — see issue #18. lint:js and lint:css do not
+# pass on main yet, and the cleanup would reformat every source file.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# A new push to the same ref makes the in-flight run redundant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Report every failing version, not just the first.
+      fail-fast: false
+      matrix:
+        # 8.1 is the declared floor in composer.json and the plugin header.
+        # 8.4 is the forward-compatibility check.
+        php-version: ['8.1', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring
+          coverage: none
+          tools: composer
+
+      # Also fails when composer.lock has drifted out of sync with
+      # composer.json, which the platform pin makes easy to forget.
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --no-interaction
+
+      - name: Run PHPUnit
+        run: composer test
+
+  js:
+    name: JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      # wp-scripts ships a GitHub Actions Jest reporter, so failures annotate
+      # the diff without any extra configuration.
+      - name: Run Jest
+        run: npm test
+
+  package:
+    name: Build ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          # Matches the default in the shared ucsc/actions release workflow,
+          # so this builds the ZIP the same way a release does.
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      # `npm ci` rather than `npm install`: it also fails if
+      # package-lock.json has drifted out of sync with package.json.
+      - name: Install Node dependencies
+        run: npm ci
+
+      # Not optional. The `files` array in package.json ships `vendor`, and
+      # the plugin-update-checker has to be in the ZIP for updates to work.
+      - name: Install Composer runtime dependencies
+        run: composer install --no-dev --no-progress --optimize-autoloader
+
+      - name: Build
+        run: npm run build
+
+      - name: Build the distributable ZIP
+        run: npx wp-scripts plugin-zip
+
+      - name: Verify ZIP contents
+        run: |
+          set -euo pipefail
+          zip='ucsc-blocks.zip'
+          root='ucsc-blocks'
+
+          if [ ! -f "$zip" ]; then
+              echo "::error::$zip was not produced"
+              exit 1
+          fi
+
+          # Written to a file rather than held in a variable and piped into
+          # grep: `printf ... | grep -q` returns 141 under `set -o pipefail`
+          # once the listing outgrows the pipe buffer, because grep exits on
+          # the first match and printf is killed by SIGPIPE. That turns every
+          # check below into a false result — including the forbidden-paths
+          # guard, which would silently stop failing.
+          entries="$(mktemp)"
+          unzip -Z1 "$zip" | sort > "$entries"
+          cat "$entries"
+
+          fail=0
+
+          has() {
+              grep -qxF -- "$1" "$entries"
+          }
+
+          # Everything the `files` array in package.json promises to ship and
+          # that actually exists in the repo, plus package.json itself —
+          # npm-packlist always includes that regardless of `files`, so it is
+          # expected. Note `files` also lists LICENSE, but no LICENSE file
+          # exists in the repo; see issue #17.
+          for path in ucsc-blocks.php README.md CHANGELOG.md package.json; do
+              if ! has "$root/$path"; then
+                  echo "::error::ZIP is missing $path"
+                  fail=1
+              fi
+          done
+
+          # The update checker must ship or the plugin cannot self-update.
+          if ! grep -q "^$root/vendor/yahnis-elsts/" "$entries"; then
+              echo "::error::ZIP is missing vendor/yahnis-elsts/"
+              fail=1
+          fi
+
+          # The build actually ran and produced something for every block
+          # registered in ucsc-blocks.php.
+          for block in ucsc-events calendar-feed; do
+              for file in block.json index.js view.js render.php "$block.php"; do
+                  if ! has "$root/build/blocks/$block/$file"; then
+                      echo "::error::ZIP is missing build/blocks/$block/$file"
+                      fail=1
+                  fi
+              done
+          done
+
+          # Nothing here may ever ship to a WordPress site. vendor/phpunit/ is
+          # named explicitly to catch a regression in the --no-dev install.
+          forbidden="^$root/(tests/|src/|node_modules/|\.github/|vendor/phpunit/|phpunit\.xml\.dist$|composer\.(json|lock)$|package-lock\.json$|ROADMAP\.md$|AGENTS\.md$|CLAUDE\.md$)"
+          if grep -Eq "$forbidden" "$entries"; then
+              echo "::error::ZIP contains files that must not ship:"
+              grep -E "$forbidden" "$entries"
+              fail=1
+          fi
+
+          exit "$fail"

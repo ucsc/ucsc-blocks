@@ -4,7 +4,7 @@
  * Description:       Blocks for UCSC WordPress websites.
  * Version: 3.0.0
  * Requires at least: 6.5
- * Requires PHP:      8.0
+ * Requires PHP:      8.1
  * Update URI:        https://github.com/ucsc/ucsc-blocks
  * Author:            UC Santa Cruz, Communications
  * Author URI:        https://github.com/ucsc

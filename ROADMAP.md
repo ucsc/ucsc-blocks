@@ -230,4 +230,18 @@ These need more research or discussion before becoming roadmap items:
 - **Block: Stats/Counter** — Animated statistics display (e.g., "15,000 students")
 - **Plugin: Settings Page** — Global settings (default cache duration, API keys, brand colors)
 - **Testing: E2E Tests** — Playwright tests for block editor interactions
-- **Testing: PHP Unit Tests** — PHPUnit for server-side fetch/cache functions
+
+---
+
+## Done
+
+- **Testing: PHP Unit Tests** — PHPUnit for server-side fetch/cache functions.
+  Covers the calendar-feed ICS parser, datetime parsing, description HTML
+  filtering and feed-URL SSRF validation. Runs on bare PHP and Composer — the
+  standalone branch of `tests/bootstrap.php` stubs WordPress, so no WordPress
+  install or database is needed. Set `WP_TESTS_DIR` to run the same suite
+  inside a real WordPress test suite instead.
+
+  Gated in CI by `.github/workflows/ci.yml` alongside the Jest suite and a
+  build + ZIP-contents check (#17). Still open: `ucsc-events` has no PHP test
+  coverage — the standalone bootstrap only loads `calendar-feed.php`.
