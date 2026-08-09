@@ -8,6 +8,7 @@
 	margin: 2rem 0;
 
 	&.layout-list {
+
 		.ucsc-events-list {
 			display: flex;
 			flex-direction: column;
@@ -46,6 +47,7 @@
 	}
 
 	&.layout-grid {
+
 		.ucsc-events-list {
 			display: grid;
 			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -81,6 +83,7 @@
 	}
 
 	&.layout-cards {
+
 		.ucsc-events-list {
 			display: grid;
 			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -175,8 +178,8 @@
 	.ucsc-events-placeholder {
 		padding: 2.2rem;
 		text-align: center;
-		background: #2A7B9B;
-			background: linear-gradient(90deg, rgba(42, 123, 155, .8) 0%, rgba(201, 247, 220, 0.8) 50%, rgba(237, 221, 83, .8) 100%);
+		background: #2a7b9b;
+		background: linear-gradient(90deg, rgba(42, 123, 155, 0.8) 0%, rgba(201, 247, 220, 0.8) 50%, rgba(237, 221, 83, 0.8) 100%);
 		border-radius: 2px;
 
 		.ucsc-events-placeholder-content p {
@@ -201,6 +204,7 @@
 
 	// Responsive design
 	@media (max-width: 768px) {
+
 		&.layout-list .ucsc-event-item {
 			flex-direction: column;
 		}
@@ -212,6 +216,7 @@
 
 		&.layout-grid,
 		&.layout-cards {
+
 			.ucsc-events-list {
 				grid-template-columns: 1fr;
 			}
