@@ -15,8 +15,9 @@
 # regresses, render.php and <block-name>.php stop being copied, every block
 # stops registering, and nothing notices until a release tag has shipped.
 #
-# Linting is deliberately absent — see issue #18. lint:js and lint:css do not
-# pass on main yet, and the cleanup would reformat every source file.
+# Linting gates all three standards: eslint and stylelint via wp-scripts, and
+# PHPCS against WordPress-Extra + WordPress-Docs. The cleanup that made these
+# pass was issue #18.
 
 name: CI
 
@@ -67,6 +68,13 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress --no-interaction
 
+      # PHPCS reads the same sources on both matrix versions and its ruleset is
+      # not PHP-version dependent, so running it once on the declared floor
+      # avoids duplicate annotations on the same lines.
+      - name: Run PHPCS
+        if: matrix.php-version == '8.1'
+        run: composer lint
+
       - name: Run PHPUnit
         run: composer test
 
@@ -87,9 +95,19 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Run eslint
+        run: npm run lint:js
+
+      # Runs even when eslint fails, so one push reports every lint problem
+      # rather than surfacing them one standard at a time.
+      - name: Run stylelint
+        if: '!cancelled()'
+        run: npm run lint:css
+
       # wp-scripts ships a GitHub Actions Jest reporter, so failures annotate
       # the diff without any extra configuration.
       - name: Run Jest
+        if: '!cancelled()'
         run: npm test
 
   package:

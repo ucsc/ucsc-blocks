@@ -41,6 +41,18 @@ To add a new block:
 - The `--webpack-copy-php` flag copies `.php` files from `src/blocks/` to `build/blocks/`
 - Never edit files in `build/` directly
 
+## Linting
+
+All three linters are gated in CI and must exit 0:
+
+- `npm run lint:js` — eslint via `@wordpress/scripts` (add `-- --fix` to autofix)
+- `npm run lint:css` — stylelint via `@wordpress/scripts` (add `-- --fix` to autofix)
+- `composer lint` — PHPCS against `WordPress-Extra` + `WordPress-Docs`, configured
+  in `.phpcs.xml.dist` (`composer lint-fix` runs phpcbf)
+
+`build/` is excluded from PHPCS: it is a copy of the `src/blocks/` PHP, so linting
+it would report every violation twice.
+
 ## Commit Conventions
 
 Conventional Commits with emoji prefixes:
