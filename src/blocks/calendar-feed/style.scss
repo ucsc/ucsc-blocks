@@ -5,6 +5,20 @@
 .wp-block-ucsc-calendar-feed {
 	margin: 2rem 0;
 
+	// ── Reset list defaults ─────────────────────────────────────
+	// Declared before the layout rules below so specificity ascends down the
+	// file. The layout rules are more specific and set disjoint properties,
+	// so they still win where both apply.
+	.ucsc-cf-events-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.ucsc-cf-event-item {
+		list-style: none;
+	}
+
 	// ── List layout ──────────────────────────────────────────────
 	&.layout-list {
 
@@ -34,17 +48,6 @@
 			border-radius: 8px;
 			padding: 1.25rem;
 		}
-	}
-
-	// ── Reset list defaults ─────────────────────────────────────
-	.ucsc-cf-events-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.ucsc-cf-event-item {
-		list-style: none;
 	}
 
 	// ── Common element styles ────────────────────────────────────
@@ -98,8 +101,7 @@
 		padding: 2.2rem;
 		text-align: center;
 		background: #2a7b9b;
-		background:
- linear-gradient(90deg, rgba(42, 123, 155, 0.4) 0%, rgba(201, 247, 220, 0.4) 50%, rgba(237, 221, 83, 0.4) 100%);
+		background: linear-gradient(90deg, rgba(42, 123, 155, 0.4) 0%, rgba(201, 247, 220, 0.4) 50%, rgba(237, 221, 83, 0.4) 100%);
 		border-radius: 2px;
 
 		.ucsc-cf-placeholder-content p {

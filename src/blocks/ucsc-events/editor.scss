@@ -8,11 +8,11 @@
 	// Editor-specific placeholder styling
 	.ucsc-events-placeholder {
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
+		color: #fff;
 		border: none;
 
 		.ucsc-events-placeholder-content h3 {
-			color: white;
+			color: #fff;
 		}
 
 		p {
@@ -32,7 +32,8 @@
 	}
 }
 
-// Event Settings inspector panel (renders in the editor sidebar, not the canvas).
+// Event Settings inspector panel (renders in the editor sidebar, not the
+// block canvas).
 .ucsc-events-settings-panel {
 	// Uniform vertical spacing between the panel's controls so the fields don't
 	// crowd each other. Targets the panel body's direct child controls and leaves

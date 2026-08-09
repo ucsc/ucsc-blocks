@@ -4,6 +4,13 @@
 
 .wp-block-ucsc-calendar-feed {
 
+	// Declared ahead of the nested `.ucsc-cf-cache-controls .components-notice`
+	// rule below so specificity ascends down the file. The nested rule is more
+	// specific, so it still wins for notices inside the cache controls.
+	.components-notice {
+		margin: 1rem 0;
+	}
+
 	.ucsc-cf-cache-controls {
 		margin-top: 1rem;
 		padding-top: 1rem;
@@ -17,9 +24,5 @@
 	.ucsc-cf-loading {
 		background: #f8f9fa;
 		border-radius: 4px;
-	}
-
-	.components-notice {
-		margin: 1rem 0;
 	}
 }

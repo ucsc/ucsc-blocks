@@ -54,6 +54,10 @@
 			gap: 2rem;
 		}
 
+		// A block renders exactly one `layout-*` class, so this never shares an
+		// element with the `.layout-list .ucsc-event-item:hover` rule above and
+		// the descending specificity has no cascade effect.
+		// stylelint-disable-next-line no-descending-specificity
 		.ucsc-event-item {
 			border: 1px solid #e0e0e0;
 			border-radius: 8px;
@@ -90,6 +94,8 @@
 			gap: 1.5rem;
 		}
 
+		// Mutually exclusive with the other `layout-*` scopes; see above.
+		// stylelint-disable-next-line no-descending-specificity
 		.ucsc-event-item {
 			background: #fff;
 			border-radius: 12px;
