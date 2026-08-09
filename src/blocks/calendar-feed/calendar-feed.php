@@ -76,7 +76,7 @@ function ucsc_calendar_feed_parse( $ics_content ) {
 	foreach ( $lines as $line ) {
 		$line = trim( $line );
 
-		if ( $line === 'BEGIN:VEVENT' ) {
+		if ( 'BEGIN:VEVENT' === $line ) {
 			$event = array(
 				'summary'     => '',
 				'dtstart'     => '',
@@ -89,21 +89,21 @@ function ucsc_calendar_feed_parse( $ics_content ) {
 			continue;
 		}
 
-		if ( $line === 'END:VEVENT' && $event !== null ) {
+		if ( 'END:VEVENT' === $line && null !== $event ) {
 			$events[] = $event;
 			$event    = null;
 			continue;
 		}
 
-		if ( $event === null ) {
+		if ( null === $event ) {
 			continue;
 		}
 
 		// Split on the first colon that is not inside a parameter value.
 		// Property lines look like: PROPNAME;PARAM=VAL:value
-		// We need to handle parameters like DTSTART;TZID=America/Los_Angeles:20260301T090000
+		// We need to handle parameters like DTSTART;TZID=America/Los_Angeles:20260301T090000.
 		$colon_pos = strpos( $line, ':' );
-		if ( $colon_pos === false ) {
+		if ( false === $colon_pos ) {
 			continue;
 		}
 
@@ -112,7 +112,7 @@ function ucsc_calendar_feed_parse( $ics_content ) {
 
 		// The property name is everything before the first semicolon (parameters).
 		$semi_pos  = strpos( $prop_part, ';' );
-		$prop_name = ( $semi_pos !== false ) ? substr( $prop_part, 0, $semi_pos ) : $prop_part;
+		$prop_name = ( false !== $semi_pos ) ? substr( $prop_part, 0, $semi_pos ) : $prop_part;
 		$prop_name = strtoupper( $prop_name );
 
 		// Unescape ICS text values.
@@ -164,7 +164,7 @@ function ucsc_calendar_feed_parse( $ics_content ) {
 function ucsc_calendar_feed_parse_datetime( $dt ) {
 	$dt = trim( $dt );
 
-	// All-day date: YYYYMMDD
+	// All-day date: YYYYMMDD.
 	if ( preg_match( '/^\d{8}$/', $dt ) ) {
 		$parsed = DateTime::createFromFormat( 'Ymd', $dt );
 		if ( $parsed ) {
@@ -173,7 +173,7 @@ function ucsc_calendar_feed_parse_datetime( $dt ) {
 		}
 	}
 
-	// Date-time with UTC indicator
+	// Date-time with UTC indicator.
 	if ( preg_match( '/^\d{8}T\d{6}Z$/', $dt ) ) {
 		$parsed = DateTime::createFromFormat( 'Ymd\THis\Z', $dt, new DateTimeZone( 'UTC' ) );
 		if ( $parsed ) {
@@ -181,7 +181,7 @@ function ucsc_calendar_feed_parse_datetime( $dt ) {
 		}
 	}
 
-	// Date-time without timezone (treat as site timezone)
+	// Date-time without timezone (treat as site timezone).
 	if ( preg_match( '/^\d{8}T\d{6}$/', $dt ) ) {
 		$tz     = wp_timezone();
 		$parsed = DateTime::createFromFormat( 'Ymd\THis', $dt, $tz );
@@ -275,11 +275,11 @@ function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
 
 	// Validate URL — scheme, host, and SSRF checks.
 	if ( ! ucsc_calendar_feed_validate_feed_url( $feed_url ) ) {
-		error_log( 'UCSC Calendar Feed Error: URL failed validation — ' . $feed_url );
+		error_log( 'UCSC Calendar Feed Error: URL failed validation — ' . $feed_url ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 		return array();
 	}
 
-	// Fetch the ICS feed
+	// Fetch the ICS feed.
 	$response = wp_remote_get(
 		$feed_url,
 		array(
@@ -295,13 +295,13 @@ function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
 	);
 
 	if ( is_wp_error( $response ) ) {
-		error_log( 'UCSC Calendar Feed Error: ' . $response->get_error_message() );
+		error_log( 'UCSC Calendar Feed Error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 		return array();
 	}
 
 	$response_code = wp_remote_retrieve_response_code( $response );
-	if ( $response_code !== 200 ) {
-		error_log( 'UCSC Calendar Feed Error: HTTP ' . $response_code );
+	if ( 200 !== $response_code ) {
+		error_log( 'UCSC Calendar Feed Error: HTTP ' . $response_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 		return array();
 	}
 
@@ -309,17 +309,17 @@ function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
 
 	// Enforce a maximum body size to prevent memory exhaustion.
 	if ( strlen( $body ) > UCSC_CALENDAR_FEED_MAX_BODY_SIZE ) {
-		error_log( 'UCSC Calendar Feed Error: Response body exceeds ' . UCSC_CALENDAR_FEED_MAX_BODY_SIZE . ' bytes' );
+		error_log( 'UCSC Calendar Feed Error: Response body exceeds ' . UCSC_CALENDAR_FEED_MAX_BODY_SIZE . ' bytes' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 		return array();
 	}
 
-	// Basic sanity check — must contain VCALENDAR
+	// Basic sanity check — must contain VCALENDAR.
 	if ( strpos( $body, 'BEGIN:VCALENDAR' ) === false ) {
-		error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid iCalendar feed' );
+		error_log( 'UCSC Calendar Feed Error: Response does not appear to be a valid iCalendar feed' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 		return array();
 	}
 
-	// Parse events
+	// Parse events.
 	$raw_events = ucsc_calendar_feed_parse( $body );
 
 	if ( empty( $raw_events ) ) {
@@ -400,7 +400,7 @@ function ucsc_calendar_feed_fetch_events( $feed_url, $count = 5 ) {
 		);
 	}
 
-	// Sort by start date ascending
+	// Sort by start date ascending.
 	usort(
 		$events,
 		function ( $a, $b ) {

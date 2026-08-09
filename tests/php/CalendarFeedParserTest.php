@@ -15,11 +15,15 @@ class CalendarFeedParserTest extends TestCase {
 
 	/**
 	 * Path to the sample ICS fixture.
+	 *
+	 * @var string
 	 */
 	private static string $fixture_path;
 
 	/**
 	 * Raw ICS content loaded once for all tests.
+	 *
+	 * @var string
 	 */
 	private static string $ics;
 
@@ -78,7 +82,7 @@ class CalendarFeedParserTest extends TestCase {
 
 	public function test_unfolds_continuation_lines(): void {
 		$events = ucsc_calendar_feed_parse( self::$ics );
-		$desc   = $events[1]['description']; // Faculty Research Symposium
+		$desc   = $events[1]['description']; // Faculty Research Symposium.
 		$this->assertStringContainsString( 'Philosophy', $desc );
 	}
 
@@ -103,12 +107,12 @@ class CalendarFeedParserTest extends TestCase {
 
 	public function test_handles_empty_summary(): void {
 		$events = ucsc_calendar_feed_parse( self::$ics );
-		$this->assertEmpty( $events[10]['summary'] ); // evt-011
+		$this->assertEmpty( $events[10]['summary'] ); // evt-011.
 	}
 
 	public function test_handles_missing_dtend(): void {
 		$events = ucsc_calendar_feed_parse( self::$ics );
-		$evt    = $events[11]; // evt-012
+		$evt    = $events[11]; // evt-012.
 		$this->assertEmpty( $evt['dtend'] );
 		$this->assertGreaterThan( 0, $evt['dtstart'] );
 	}
@@ -120,7 +124,7 @@ class CalendarFeedParserTest extends TestCase {
 
 	public function test_preserves_unicode(): void {
 		$events = ucsc_calendar_feed_parse( self::$ics );
-		$evt    = $events[9]; // evt-010
+		$evt    = $events[9]; // evt-010.
 		$this->assertStringContainsString( '☕', $evt['summary'] );
 		$this->assertStringContainsString( 'Café', $evt['summary'] );
 	}

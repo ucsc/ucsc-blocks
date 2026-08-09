@@ -1,7 +1,10 @@
 <?php
-
 /**
+ * Server-side render template for the UCSC Events block.
+ *
  * @see https://github.com/WordPress/gutenberg/blob/trunk/docs/reference-guides/block-api/block-metadata.md#render
+ *
+ * @package UcscBlocks
  */
 
 $organizers     = $attributes['organizers'] ?? array();
@@ -23,14 +26,14 @@ $api_url     = function_exists( 'ucsc_events_build_api_url' )
 	? ucsc_events_build_api_url( $organizer_ids, $legacy_url, $has_filters )
 	: $legacy_url;
 
-// Get the block wrapper attributes with layout class
+// Get the block wrapper attributes with layout class.
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
 		'class' => 'layout-' . esc_attr( $layout_style ),
 	)
 );
 
-// Fetch all cached events (up to 50 from the API)
+// Fetch all cached events (up to 50 from the API).
 $events       = array();
 $series_slugs = array();
 if ( ! empty( $api_url ) ) {
@@ -73,26 +76,32 @@ if ( ! empty( $api_url ) ) {
 			);
 		}
 
-		// Slice to the requested number of events
+		// Slice to the requested number of events.
 		$events = array_slice( $events, 0, $item_count );
 	}
 }
 
-// Add nonce to global JS object
+// Add nonce to global JS object.
 if ( ! wp_script_is( 'ucsc-events-frontend', 'done' ) ) {
 	wp_add_inline_script(
 		'wp-block-ucsc-events-view-script',
-		'window.ucscEventsNonce = ' . json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ';',
+		'window.ucscEventsNonce = ' . wp_json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ';',
 		'before'
 	);
 }
 
 ?>
-<div <?php echo $wrapper_attributes; ?>>
-	<?php if ( empty( $api_url ) or empty( $events ) ) : ?>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() returns escaped attribute markup. ?>>
+	<?php if ( empty( $api_url ) || empty( $events ) ) : ?>
 		<div class="ucsc-events-placeholder">
 			<div class="ucsc-events-placeholder-content">
-				<p><?php _e( 'Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-blocks' ); ?></p>
+				<p>
+					<?php
+					// The anchor is part of the translatable copy, so the
+					// markup is preserved rather than escaped away.
+					echo wp_kses_post( __( 'Visit the <a href="https://events.ucsc.edu">UCSC events calendar</a> for a list of all upcoming events', 'ucsc-blocks' ) );
+					?>
+				</p>
 			</div>
 		</div>
 	<?php else : ?>
@@ -129,7 +138,7 @@ if ( ! wp_script_is( 'ucsc-events-frontend', 'done' ) ) {
 						<?php if ( isset( $series_slugs[ $event['slug'] ?? '' ] ) ) : ?>
 							<div class="ucsc-event-series">
 								<span class="dashicons dashicons-controls-repeat"></span>
-								<?php _e( 'Series', 'ucsc-blocks' ); ?>
+								<?php esc_html_e( 'Series', 'ucsc-blocks' ); ?>
 							</div>
 						<?php endif; ?>
 

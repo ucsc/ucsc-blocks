@@ -9,16 +9,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * UCSC Tribe Events REST API endpoints.
- *
- * Single source of truth for the base URLs, shared by the server-side renderer
- * and the block editor (passed to JS via wp_localize_script). Filterable so a
- * site can point the block at a different events source.
- *
- * @return array Associative array with 'events' and 'organizers' endpoint URLs.
- */
 if ( ! function_exists( 'ucsc_events_get_api_endpoints' ) ) {
+	/**
+	 * UCSC Tribe Events REST API endpoints.
+	 *
+	 * Single source of truth for the base URLs, shared by the server-side renderer
+	 * and the block editor (passed to JS via wp_localize_script). Filterable so a
+	 * site can point the block at a different events source.
+	 *
+	 * @return array Associative array with 'events' and 'organizers' endpoint URLs.
+	 */
 	function ucsc_events_get_api_endpoints() {
 		return apply_filters(
 			'ucsc_events_api_endpoints',
@@ -57,33 +57,33 @@ function ucsc_events_enqueue_frontend_assets() {
 		wp_enqueue_style( 'dashicons' );
 		wp_add_inline_script(
 			'wp-block-ucsc-events-view-script',
-			'window.ucscEventsNonce = ' . json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ';\n' .
-			'window.ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';',
+			'window.ucscEventsNonce = ' . wp_json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ";\n" .
+			'window.ajaxurl = ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ';',
 			'before'
 		);
 	}
 }
 add_action( 'wp_enqueue_scripts', 'ucsc_events_enqueue_frontend_assets' );
 
-/**
- * Build the events API URL from selected organizers.
- *
- * Organizers are filtered with the Tribe `organizer[]` query argument. When no
- * organizers are selected, an optional legacy URL (from older blocks that stored
- * a hand-built `apiUrl`) is used as a fallback. Failing that, if category/tag
- * filters are active the base campus feed is returned so those filters can drive
- * a campus-wide fetch; otherwise an empty string is returned so an unconfigured
- * block renders a placeholder instead of the feed.
- *
- * IDs are sanitized and sorted so the resulting URL — and therefore the cache
- * key derived from it — is deterministic regardless of selection order.
- *
- * @param array  $organizer_ids Organizer IDs to filter by.
- * @param string $legacy_url    Optional legacy API URL for backward compatibility.
- * @param bool   $has_filters   Whether category/tag filters are active.
- * @return string The events API URL to fetch, or '' when nothing is configured.
- */
 if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
+	/**
+	 * Build the events API URL from selected organizers.
+	 *
+	 * Organizers are filtered with the Tribe `organizer[]` query argument. When no
+	 * organizers are selected, an optional legacy URL (from older blocks that stored
+	 * a hand-built `apiUrl`) is used as a fallback. Failing that, if category/tag
+	 * filters are active the base campus feed is returned so those filters can drive
+	 * a campus-wide fetch; otherwise an empty string is returned so an unconfigured
+	 * block renders a placeholder instead of the feed.
+	 *
+	 * IDs are sanitized and sorted so the resulting URL — and therefore the cache
+	 * key derived from it — is deterministic regardless of selection order.
+	 *
+	 * @param array  $organizer_ids Organizer IDs to filter by.
+	 * @param string $legacy_url    Optional legacy API URL for backward compatibility.
+	 * @param bool   $has_filters   Whether category/tag filters are active.
+	 * @return string The events API URL to fetch, or '' when nothing is configured.
+	 */
 	function ucsc_events_build_api_url( $organizer_ids, $legacy_url = '', $has_filters = false ) {
 		$endpoints = ucsc_events_get_api_endpoints();
 		$base      = $endpoints['events'];
@@ -109,16 +109,16 @@ if ( ! function_exists( 'ucsc_events_build_api_url' ) ) {
 	}
 }
 
-/**
- * Extract sanitized organizer IDs from a block's `organizers` attribute.
- *
- * The attribute is an array of `{ id, name }` objects supplied by the editor.
- * Only the IDs are used server-side; names are display-only.
- *
- * @param mixed $organizers Raw organizers attribute value.
- * @return int[] Sanitized organizer IDs.
- */
 if ( ! function_exists( 'ucsc_events_get_organizer_ids' ) ) {
+	/**
+	 * Extract sanitized organizer IDs from a block's `organizers` attribute.
+	 *
+	 * The attribute is an array of `{ id, name }` objects supplied by the editor.
+	 * Only the IDs are used server-side; names are display-only.
+	 *
+	 * @param mixed $organizers Raw organizers attribute value.
+	 * @return int[] Sanitized organizer IDs.
+	 */
 	function ucsc_events_get_organizer_ids( $organizers ) {
 		if ( ! is_array( $organizers ) ) {
 			return array();
@@ -144,13 +144,13 @@ if ( ! function_exists( 'ucsc_events_get_organizer_ids' ) ) {
  * Handle cache clearing AJAX request
  */
 function ucsc_events_clear_cache() {
-	// Verify nonce for security
+	// Verify nonce for security.
 	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_events_nonce' ) ) {
 		wp_send_json_error( array( 'message' => 'Security check failed' ) );
 		return;
 	}
 
-	// Check user permissions
+	// Check user permissions.
 	if ( ! current_user_can( 'edit_posts' ) ) {
 		wp_send_json_error( array( 'message' => 'Insufficient permissions to clear the cache' ) );
 		return;
@@ -236,12 +236,12 @@ function ucsc_events_preview() {
 }
 add_action( 'wp_ajax_ucsc_events_preview', 'ucsc_events_preview' );
 
-/**
- * Shared nonce + capability guard for the editor's AJAX lookups.
- *
- * @return bool True when the request is a valid editor request.
- */
 if ( ! function_exists( 'ucsc_events_verify_editor_request' ) ) {
+	/**
+	 * Shared nonce + capability guard for the editor's AJAX lookups.
+	 *
+	 * @return bool True when the request is a valid editor request.
+	 */
 	function ucsc_events_verify_editor_request() {
 		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['nonce'] ), 'ucsc_events_nonce' ) ) {
 			return false;
@@ -251,14 +251,14 @@ if ( ! function_exists( 'ucsc_events_verify_editor_request' ) ) {
 	}
 }
 
-/**
- * Derive a sibling Tribe REST endpoint (e.g. categories, tags) from the events
- * endpoint, so all lookups share the single filterable source of truth.
- *
- * @param string $taxonomy Route name, e.g. 'categories' or 'tags'.
- * @return string The derived endpoint URL.
- */
 if ( ! function_exists( 'ucsc_events_get_taxonomy_endpoint' ) ) {
+	/**
+	 * Derive a sibling Tribe REST endpoint (e.g. categories, tags) from the events
+	 * endpoint, so all lookups share the single filterable source of truth.
+	 *
+	 * @param string $taxonomy Route name, e.g. 'categories' or 'tags'.
+	 * @return string The derived endpoint URL.
+	 */
 	function ucsc_events_get_taxonomy_endpoint( $taxonomy ) {
 		$endpoints = ucsc_events_get_api_endpoints();
 
@@ -266,13 +266,13 @@ if ( ! function_exists( 'ucsc_events_get_taxonomy_endpoint' ) ) {
 	}
 }
 
-/**
- * Fetch and JSON-decode a Tribe REST endpoint server-side for editor lookups.
- *
- * @param string $url Endpoint URL to fetch.
- * @return array|WP_Error Decoded response array, or WP_Error on failure.
- */
 if ( ! function_exists( 'ucsc_events_remote_get_json' ) ) {
+	/**
+	 * Fetch and JSON-decode a Tribe REST endpoint server-side for editor lookups.
+	 *
+	 * @param string $url Endpoint URL to fetch.
+	 * @return array|WP_Error Decoded response array, or WP_Error on failure.
+	 */
 	function ucsc_events_remote_get_json( $url ) {
 		if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			return new WP_Error( 'invalid_url', 'Invalid URL' );
@@ -319,6 +319,7 @@ function ucsc_events_search_organizers() {
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce and capability are verified by ucsc_events_verify_editor_request() above.
 	$search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 	if ( strlen( $search ) < 2 ) {
 		wp_send_json_success( array( 'organizers' => array() ) );
@@ -402,6 +403,7 @@ function ucsc_events_search_tags() {
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce and capability are verified by ucsc_events_verify_editor_request() above.
 	$search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 	if ( strlen( $search ) < 2 ) {
 		wp_send_json_success( array( 'tags' => array() ) );
@@ -434,17 +436,17 @@ function ucsc_events_search_tags() {
 }
 add_action( 'wp_ajax_ucsc_events_search_tags', 'ucsc_events_search_tags' );
 
-/**
- * Sanitize a list of taxonomy slugs from external/editor input.
- *
- * Accepts either an array of slugs or a comma-separated string. Each value is
- * passed through sanitize_title() and empties are dropped, so the result is
- * safe to use in cache keys and API query strings.
- *
- * @param array|string $slugs Raw slug list.
- * @return string[] Cleaned, re-indexed slug list.
- */
 if ( ! function_exists( 'ucsc_events_sanitize_slugs' ) ) {
+	/**
+	 * Sanitize a list of taxonomy slugs from external/editor input.
+	 *
+	 * Accepts either an array of slugs or a comma-separated string. Each value is
+	 * passed through sanitize_title() and empties are dropped, so the result is
+	 * safe to use in cache keys and API query strings.
+	 *
+	 * @param array|string $slugs Raw slug list.
+	 * @return string[] Cleaned, re-indexed slug list.
+	 */
 	function ucsc_events_sanitize_slugs( $slugs ) {
 		if ( is_string( $slugs ) ) {
 			$slugs = explode( ',', $slugs );
@@ -460,14 +462,19 @@ if ( ! function_exists( 'ucsc_events_sanitize_slugs' ) ) {
 	}
 }
 
-/**
- * Build the transient cache key for a fetch, scoped to the URL and filters.
- *
- * Filters are folded into the key so different category/tag selections cache
- * separately. Both the fetch and the cache-clear handler must use this helper
- * so they target the same transient.
- */
 if ( ! function_exists( 'ucsc_events_cache_key' ) ) {
+	/**
+	 * Build the transient cache key for a fetch, scoped to the URL and filters.
+	 *
+	 * Filters are folded into the key so different category/tag selections cache
+	 * separately. Both the fetch and the cache-clear handler must use this helper
+	 * so they target the same transient.
+	 *
+	 * @param string $api_url    Events API endpoint the key is scoped to.
+	 * @param array  $categories Active category slugs.
+	 * @param array  $tags       Active tag slugs.
+	 * @return string Transient key.
+	 */
 	function ucsc_events_cache_key( $api_url, $categories = array(), $tags = array() ) {
 		return 'ucsc_events_' . md5(
 			$api_url
@@ -477,17 +484,17 @@ if ( ! function_exists( 'ucsc_events_cache_key' ) ) {
 	}
 }
 
-/**
- * Fetch events data from external API.
- *
- * Always fetches the maximum 50 events from the API and caches them.
- * Callers are responsible for slicing the result to the desired count.
- *
- * @param string       $api_url    Events API endpoint.
- * @param array|string $categories Category slugs to filter by (optional).
- * @param array|string $tags       Tag slugs to filter by (optional).
- */
 if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
+	/**
+	 * Fetch events data from external API.
+	 *
+	 * Always fetches the maximum 50 events from the API and caches them.
+	 * Callers are responsible for slicing the result to the desired count.
+	 *
+	 * @param string       $api_url    Events API endpoint.
+	 * @param array|string $categories Category slugs to filter by (optional).
+	 * @param array|string $tags       Tag slugs to filter by (optional).
+	 */
 	function ucsc_events_fetch_data( $api_url, $categories = array(), $tags = array() ) {
 		if ( empty( $api_url ) ) {
 			return array();
@@ -497,21 +504,21 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		$categories = ucsc_events_sanitize_slugs( $categories );
 		$tags       = ucsc_events_sanitize_slugs( $tags );
 
-		// Create cache key based on URL and selected filters
+		// Create cache key based on URL and selected filters.
 		$cache_key = ucsc_events_cache_key( $api_url, $categories, $tags );
 
-		// Try to get cached data first
+		// Try to get cached data first.
 		$cached_data = get_transient( $cache_key );
 		if ( false !== $cached_data ) {
 			return $cached_data;
 		}
 
-		// Validate URL
+		// Validate URL.
 		if ( ! filter_var( $api_url, FILTER_VALIDATE_URL ) ) {
 			return array();
 		}
 
-		// Always fetch the maximum number of events (API caps at 50)
+		// Always fetch the maximum number of events (API caps at 50).
 		$query_args = array(
 			'per_page'     => 50,
 			'starts_after' => 'yesterday',
@@ -527,7 +534,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 
 		$full_url = add_query_arg( $query_args, $api_url );
 
-		// Fetch data from API
+		// Fetch data from API.
 		$response = wp_remote_get(
 			$full_url,
 			array(
@@ -541,14 +548,14 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// Log error for debugging
-			error_log( 'UCSC Events API Error: ' . $response->get_error_message() );
+			// Log error for debugging.
+			error_log( 'UCSC Events API Error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 			return array();
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
-			error_log( 'UCSC Events API Error: HTTP ' . $response_code );
+		if ( 200 !== $response_code ) {
+			error_log( 'UCSC Events API Error: HTTP ' . $response_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 			return array();
 		}
 
@@ -557,11 +564,11 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		$data    = $fetched['events'];
 
 		if ( ! is_array( $data ) ) {
-			error_log( 'UCSC Events API Error: Invalid JSON response' );
+			error_log( 'UCSC Events API Error: Invalid JSON response' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic for an external fetch failure, not debug code.
 			return array();
 		}
 
-		// Process and clean the data
+		// Process and clean the data.
 		$events = array();
 		foreach ( $data as $item ) {
 			if ( ! is_array( $item ) ) {
@@ -570,7 +577,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 
 			$featured_image = '';
 
-			// Try to get featured image from _embedded data
+			// Try to get featured image from _embedded data.
 			if ( isset( $item['image']['url'] ) ) {
 				$featured_image = $item['image']['url'];
 			} elseif ( isset( $item['image']['sizes']['medium']['url'] ) ) {
@@ -588,7 +595,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 			);
 		}
 
-		// Cache the processed data for 15 minutes
+		// Cache the processed data for 15 minutes.
 		set_transient( $cache_key, $events, HOUR_IN_SECONDS );
 
 		return $events;

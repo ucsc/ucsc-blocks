@@ -57,12 +57,13 @@ $ucsc_block_includes = array(
 	'calendar-feed/calendar-feed.php',
 );
 
-foreach ( $ucsc_block_includes as $include ) {
-	$file = __DIR__ . '/build/blocks/' . $include;
-	if ( file_exists( $file ) ) {
-		require_once $file;
+foreach ( $ucsc_block_includes as $ucsc_block_include ) {
+	$ucsc_block_include_file = __DIR__ . '/build/blocks/' . $ucsc_block_include;
+	if ( file_exists( $ucsc_block_include_file ) ) {
+		require_once $ucsc_block_include_file;
 	}
 }
+unset( $ucsc_block_include, $ucsc_block_include_file );
 
 /**
  * Registers the block using the metadata loaded from the `block.json` file.

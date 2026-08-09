@@ -17,13 +17,13 @@ $wrapper_attributes = get_block_wrapper_attributes(
 	)
 );
 
-// Fetch events
+// Fetch events.
 $events = array();
 if ( ! empty( $feed_url ) && function_exists( 'ucsc_calendar_feed_fetch_events' ) ) {
 	$events = ucsc_calendar_feed_fetch_events( $feed_url, $item_count );
 }
 ?>
-<div <?php echo $wrapper_attributes; ?>>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() returns escaped attribute markup. ?>>
 	<?php if ( empty( $feed_url ) || empty( $events ) ) : ?>
 		<div class="ucsc-cf-placeholder">
 			<div class="ucsc-cf-placeholder-content">

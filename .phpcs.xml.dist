@@ -32,8 +32,29 @@
 	<rule ref="WordPress-Docs"/>
 
 	<!-- Add in some extra rules from other standards. -->
-	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+		<!--
+		The WordPress stand-ins in tests/bootstrap.php mirror core signatures so
+		the plugin can be loaded without WordPress, and deliberately ignore most
+		of what they are handed.
+		-->
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
 	<rule ref="Generic.Commenting.Todo"/>
+
+	<!--
+	tests/bootstrap.php defines the stand-ins for wp_strip_all_tags(),
+	wp_parse_url() and friends, implementing them in terms of the PHP natives.
+	Telling those stubs to call the WordPress alternative is circular, since the
+	stub is the alternative.
+	-->
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<!-- Likewise, the date_i18n() stub wraps date() on purpose. -->
+	<rule ref="WordPress.DateTime.RestrictedFunctions">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
 
 	<!-- Match the `Requires at least` header in ucsc-blocks.php. -->
 	<config name="minimum_supported_wp_version" value="6.5"/>
@@ -57,6 +78,13 @@
 		loaded by WordPress, so the plugin prefix would only obscure them.
 		-->
 		<exclude-pattern>/tests/*</exclude-pattern>
+		<!--
+		Block render templates are `require`d from inside the static closure
+		that register_block_type_from_metadata() installs as the render
+		callback, so their variables are function-scoped rather than global.
+		The sniff reads them as globals because it only sees the file.
+		-->
+		<exclude-pattern>*/render.php</exclude-pattern>
 	</rule>
 
 	<!--
@@ -68,6 +96,14 @@
 		<exclude-pattern>/tests/*</exclude-pattern>
 	</rule>
 	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<!--
+	The test file separates groups of tests with `// ─── name ───` dividers.
+	Sitting immediately above a method, those read to the sniff as malformed
+	function comments; they are section headers.
+	-->
+	<rule ref="Squiz.Commenting.FunctionComment.WrongStyle">
 		<exclude-pattern>/tests/*</exclude-pattern>
 	</rule>
 
