@@ -61,7 +61,7 @@ Uses `standard-version`. Version is tracked in three places (automatically bumpe
 
 ## Code Style
 
-- 4-space indentation (see `.editorconfig`)
+- Tab indentation, 4-wide (see `.editorconfig`) — matches the `@wordpress/scripts` defaults used by wp-prettier and `@wordpress/stylelint-config`
 - WordPress PHP coding standards (function naming: `ucsc_<block>_<action>`)
 - WordPress JS/React patterns with `@wordpress/*` packages
 
