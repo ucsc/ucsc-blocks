@@ -5,7 +5,7 @@
 document.addEventListener( 'DOMContentLoaded', function () {
 	// Add click handlers and interactions for event items
 	const eventItems = document.querySelectorAll(
-		'.wp-block-telex-ucsc-events .ucsc-event-item'
+		'.wp-block-ucsc-events .ucsc-event-item'
 	);
 
 	eventItems.forEach( function ( item ) {
@@ -39,7 +39,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 	// Handle image loading errors gracefully
 	const eventImages = document.querySelectorAll(
-		'.wp-block-telex-ucsc-events .ucsc-event-image img'
+		'.wp-block-ucsc-events .ucsc-event-image img'
 	);
 	eventImages.forEach( function ( img ) {
 		img.addEventListener( 'error', function () {
@@ -52,7 +52,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 	// Lazy load images if IntersectionObserver is supported
 	if ( 'IntersectionObserver' in window ) {
-		const imageObserver = new IntersectionObserver(
+		const imageObserver = new window.IntersectionObserver(
 			( entries, observer ) => {
 				entries.forEach( ( entry ) => {
 					if ( entry.isIntersecting ) {
@@ -81,45 +81,50 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 		// Observe images with data-src attribute for lazy loading
 		const lazyImages = document.querySelectorAll(
-			'.wp-block-telex-ucsc-events img[data-src]'
+			'.wp-block-ucsc-events img[data-src]'
 		);
 		lazyImages.forEach( ( img ) => imageObserver.observe( img ) );
 	}
 
 	// Add smooth scroll behavior for anchor links
 	const anchorLinks = document.querySelectorAll(
-		'.wp-block-telex-ucsc-events a[href*="#"]'
+		'.wp-block-ucsc-events a[href*="#"]'
 	);
 	anchorLinks.forEach( function ( link ) {
 		link.addEventListener( 'click', function ( e ) {
-			const href = this.getAttribute( 'href' );
-			const hashIndex = href.indexOf( '#' );
+			// Resolve against the current page so relative hrefs such as
+			// "#section" are handled alongside fully qualified URLs.
+			const url = new window.URL( this.href, window.location.href );
 
-			if ( hashIndex !== -1 ) {
-				const hash = href.substring( hashIndex + 1 );
-				const target = document.getElementById( hash );
+			// Only hijack links that point at an anchor on this same page.
+			if (
+				url.origin !== window.location.origin ||
+				url.pathname !== window.location.pathname ||
+				! url.hash
+			) {
+				return;
+			}
 
-				if (
-					target &&
-					href.indexOf( window.location.hostname ) !== -1
-				) {
-					e.preventDefault();
-					target.scrollIntoView( {
-						behavior: 'smooth',
-						block: 'start',
-					} );
-				}
+			const target = document.getElementById( url.hash.substring( 1 ) );
+			if ( target ) {
+				e.preventDefault();
+				target.scrollIntoView( {
+					behavior: 'smooth',
+					block: 'start',
+				} );
 			}
 		} );
 	} );
 
-	// Debug logging if needed
+	// Debug logging, opt-in via the ?debug=ucsc-events query string.
+	/* eslint-disable no-console */
 	if ( window.location.search.includes( 'debug=ucsc-events' ) ) {
 		console.log( 'UCSC Events block loaded' );
 		console.log(
 			'Found event blocks:',
-			document.querySelectorAll( '.wp-block-telex-ucsc-events' ).length
+			document.querySelectorAll( '.wp-block-ucsc-events' ).length
 		);
 		console.log( 'Nonce available:', !! window.ucscEventsNonce );
 	}
+	/* eslint-enable no-console */
 } );

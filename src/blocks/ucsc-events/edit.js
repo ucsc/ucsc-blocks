@@ -32,8 +32,7 @@ import {
 	ToolbarButton,
 	Spinner,
 } from '@wordpress/components';
-import { useState, useEffect, useRef } from '@wordpress/element';
-import apiFetch from '@wordpress/api-fetch';
+import { useState, useEffect, useRef, useCallback } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
 
 /**
@@ -215,6 +214,16 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	const effectiveUrl = buildEventsUrl();
 
+	// Primitive forms of the request payload. `organizers`, `categories` and
+	// `tags` are arrays whose identity changes on every render, so deriving the
+	// exact strings sent to the server lets the preview effect below compare
+	// them by value instead of by reference.
+	const organizerIdsPayload = JSON.stringify(
+		organizers.map( ( org ) => org.id )
+	);
+	const categoryList = categories.join( ',' );
+	const tagList = tags.join( ',' );
+
 	// Search organizers for the autocomplete field (debounced).
 	useEffect( () => {
 		const query = orgSearch.trim();
@@ -266,7 +275,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Resolve the token strings from FormTokenField back into { id, name }
 	 * objects, preferring already-selected organizers, then current suggestions.
 	 * Unknown free-text entries are ignored so only valid organizers persist.
-	 * @param tokens
+	 * @param {string[]} tokens Token strings currently in the FormTokenField.
 	 */
 	const handleOrganizersChange = ( tokens ) => {
 		const next = tokens
@@ -286,25 +295,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		setAttributes( { organizers: next } );
 	};
 
-	// Fetch preview data when the effective URL, categories, or tags change (debounced).
-	// Always fetches 50 events; itemCount is applied locally when rendering.
-	useEffect( () => {
-		// Nothing configured yet — show the placeholder, don't fetch.
-		if ( ! effectiveUrl ) {
-			setPreviewData( [] );
-			setError( '' );
-			return;
-		}
-
-		// Debounce API calls so rapid organizer edits don't spam the API.
-		const timeoutId = setTimeout( () => {
-			fetchPreviewData();
-		}, 1000 );
-
-		// Cleanup function to cancel the timeout if the URL changes again
-		return () => clearTimeout( timeoutId );
-	}, [ effectiveUrl, categories.join( ',' ), tags.join( ',' ) ] );
-
 	// Load the preview through a same-origin AJAX proxy rather than fetching the
 	// events API directly. The API sits behind a CDN that caches responses without
 	// varying on Origin, so a direct cross-origin fetch intermittently hits a
@@ -312,7 +302,10 @@ export default function Edit( { attributes, setAttributes } ) {
 	// (ucsc_events_preview) fetches server-side and returns events already
 	// processed into the render shape, sharing the frontend's cache so the preview
 	// matches the published output.
-	const fetchPreviewData = async () => {
+	//
+	// Memoized on the primitive payload values so the debounced effect below
+	// re-runs exactly when the request would actually differ.
+	const fetchPreviewData = useCallback( async () => {
 		if ( ! effectiveUrl ) {
 			return;
 		}
@@ -323,13 +316,10 @@ export default function Edit( { attributes, setAttributes } ) {
 		try {
 			const formData = new FormData();
 			formData.append( 'action', 'ucsc_events_preview' );
-			formData.append(
-				'organizers',
-				JSON.stringify( organizers.map( ( org ) => org.id ) )
-			);
+			formData.append( 'organizers', organizerIdsPayload );
 			formData.append( 'api_url', apiUrl || '' );
-			formData.append( 'categories', categories.join( ',' ) );
-			formData.append( 'tags', tags.join( ',' ) );
+			formData.append( 'categories', categoryList );
+			formData.append( 'tags', tagList );
 			formData.append( 'nonce', window.ucscEventsData?.nonce || '' );
 
 			const response = await fetch(
@@ -371,7 +361,26 @@ export default function Edit( { attributes, setAttributes } ) {
 		} finally {
 			setIsLoading( false );
 		}
-	};
+	}, [ effectiveUrl, organizerIdsPayload, apiUrl, categoryList, tagList ] );
+
+	// Fetch preview data when the effective URL, categories, or tags change (debounced).
+	// Always fetches 50 events; itemCount is applied locally when rendering.
+	useEffect( () => {
+		// Nothing configured yet — show the placeholder, don't fetch.
+		if ( ! effectiveUrl ) {
+			setPreviewData( [] );
+			setError( '' );
+			return;
+		}
+
+		// Debounce API calls so rapid organizer edits don't spam the API.
+		const timeoutId = setTimeout( () => {
+			fetchPreviewData();
+		}, 1000 );
+
+		// Cleanup function to cancel the timeout if the URL changes again
+		return () => clearTimeout( timeoutId );
+	}, [ effectiveUrl, fetchPreviewData ] );
 
 	const clearCache = async () => {
 		if ( ! effectiveUrl ) {
@@ -385,13 +394,10 @@ export default function Edit( { attributes, setAttributes } ) {
 			formData.append( 'action', 'ucsc_events_clear_cache' );
 			// Send organizer IDs (and any legacy URL) so the server rebuilds the
 			// exact URL used as the cache key.
-			formData.append(
-				'organizers',
-				JSON.stringify( organizers.map( ( org ) => org.id ) )
-			);
+			formData.append( 'organizers', organizerIdsPayload );
 			formData.append( 'api_url', apiUrl || '' );
-			formData.append( 'categories', categories.join( ',' ) );
-			formData.append( 'tags', tags.join( ',' ) );
+			formData.append( 'categories', categoryList );
+			formData.append( 'tags', tagList );
 			formData.append( 'nonce', window.ucscEventsData?.nonce || '' );
 
 			const response = await fetch(
@@ -432,7 +438,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Filter out duplicate events based on slug.
 	 * Since the API returns events sorted by date, the first occurrence
 	 * of each slug is the nearest upcoming instance.
-	 * @param events
+	 * @param {Object[]} events Events as returned by the API, in date order.
 	 */
 	const deduplicateEvents = ( events ) => {
 		const seen = new Set();

@@ -23,7 +23,7 @@ import {
 	ToolbarButton,
 	Spinner,
 } from '@wordpress/components';
-import { RawHTML, useState, useEffect } from '@wordpress/element';
+import { RawHTML, useState, useEffect, useCallback } from '@wordpress/element';
 
 import './editor.scss';
 
@@ -43,30 +43,16 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __( 'Grid', 'ucsc-blocks' ), value: 'grid' },
 	];
 
-	// Fetch preview when the feed URL changes (debounced).
-	// The item count is applied client-side so changing it does not
-	// trigger a new network request.
-	useEffect( () => {
-		if ( ! feedUrl ) {
-			setPreviewData( [] );
-			setError( '' );
-			return;
-		}
-
-		const timeoutId = setTimeout( () => {
-			fetchPreviewData();
-		}, 1000 );
-
-		return () => clearTimeout( timeoutId );
-	}, [ feedUrl ] );
-
 	/**
 	 * Fetch calendar feed data for the editor preview.
 	 *
 	 * Uses the WP AJAX endpoint which runs the server-side parser,
 	 * so the preview matches what render.php will produce.
+	 *
+	 * Memoized on `feedUrl`, the only reactive value it reads, so the
+	 * debounced effect below re-runs exactly when the feed URL changes.
 	 */
-	const fetchPreviewData = async () => {
+	const fetchPreviewData = useCallback( async () => {
 		if ( ! feedUrl ) {
 			return;
 		}
@@ -118,7 +104,24 @@ export default function Edit( { attributes, setAttributes } ) {
 		} finally {
 			setIsLoading( false );
 		}
-	};
+	}, [ feedUrl ] );
+
+	// Fetch preview when the feed URL changes (debounced).
+	// The item count is applied client-side so changing it does not
+	// trigger a new network request.
+	useEffect( () => {
+		if ( ! feedUrl ) {
+			setPreviewData( [] );
+			setError( '' );
+			return;
+		}
+
+		const timeoutId = setTimeout( () => {
+			fetchPreviewData();
+		}, 1000 );
+
+		return () => clearTimeout( timeoutId );
+	}, [ feedUrl, fetchPreviewData ] );
 
 	/**
 	 * Clear the server-side transient cache for this feed URL.
