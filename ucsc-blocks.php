@@ -77,8 +77,8 @@ function ucsc_blocks_init() {
 		'calendar-feed',
 	);
 
-	foreach ($custom_blocks as $block) {
-		register_block_type(__DIR__ . '/build/blocks/' . $block);
+	foreach ( $custom_blocks as $block ) {
+		register_block_type( __DIR__ . '/build/blocks/' . $block );
 	}
 }
 add_action( 'init', 'ucsc_blocks_init' );

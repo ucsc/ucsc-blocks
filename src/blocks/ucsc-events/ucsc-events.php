@@ -40,8 +40,8 @@ function ucsc_events_enqueue_block_editor_assets() {
 		'ucsc-events-editor-script',
 		'ucscEventsData',
 		array(
-			'nonce'         => wp_create_nonce('ucsc_events_nonce'),
-			'ajaxUrl'       => admin_url('admin-ajax.php'),
+			'nonce'         => wp_create_nonce( 'ucsc_events_nonce' ),
+			'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
 			'eventsUrl'     => $endpoints['events'],
 			'organizersUrl' => $endpoints['organizers'],
 		)
@@ -53,12 +53,12 @@ add_action( 'enqueue_block_editor_assets', 'ucsc_events_enqueue_block_editor_ass
  * Add nonce to frontend
  */
 function ucsc_events_enqueue_frontend_assets() {
-	if (has_block('ucsc/events')) {
-		wp_enqueue_style('dashicons');
+	if ( has_block( 'ucsc/events' ) ) {
+		wp_enqueue_style( 'dashicons' );
 		wp_add_inline_script(
 			'wp-block-ucsc-events-view-script',
-			'window.ucscEventsNonce = ' . json_encode(wp_create_nonce('ucsc_events_nonce')) . ';\n' .
-			'window.ajaxurl = ' . json_encode(admin_url('admin-ajax.php')) . ';',
+			'window.ucscEventsNonce = ' . json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ';\n' .
+			'window.ajaxurl = ' . json_encode( admin_url( 'admin-ajax.php' ) ) . ';',
 			'before'
 		);
 	}
@@ -145,7 +145,7 @@ if ( ! function_exists( 'ucsc_events_get_organizer_ids' ) ) {
  */
 function ucsc_events_clear_cache() {
 	// Verify nonce for security
-	if ( ! isset($_POST['nonce']) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_events_nonce' ) ) {
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'ucsc_events_nonce' ) ) {
 		wp_send_json_error( array( 'message' => 'Security check failed' ) );
 		return;
 	}
@@ -160,7 +160,7 @@ function ucsc_events_clear_cache() {
 	// legacy URL) so the cache key matches the one used during rendering.
 	$organizer_ids = array();
 	if ( isset( $_POST['organizers'] ) ) {
-		$decoded = json_decode( wp_unslash( $_POST['organizers'] ), true );
+		$decoded       = json_decode( wp_unslash( $_POST['organizers'] ), true );
 		$organizer_ids = ucsc_events_get_organizer_ids( $decoded );
 	}
 
@@ -278,14 +278,17 @@ if ( ! function_exists( 'ucsc_events_remote_get_json' ) ) {
 			return new WP_Error( 'invalid_url', 'Invalid URL' );
 		}
 
-		$response = wp_remote_get( $url, array(
-			'timeout'   => 8,
-			'headers'   => array(
-				'User-Agent' => 'UCSC Events Block/1.0',
-				'Accept'     => 'application/json',
-			),
-			'sslverify' => true,
-		) );
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout'   => 8,
+				'headers'   => array(
+					'User-Agent' => 'UCSC Events Block/1.0',
+					'Accept'     => 'application/json',
+				),
+				'sslverify' => true,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -405,7 +408,7 @@ function ucsc_events_search_tags() {
 		return;
 	}
 
-	$url  = add_query_arg(
+	$url = add_query_arg(
 		array(
 			'search'   => $search,
 			'per_page' => 10,
@@ -511,7 +514,7 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		// Always fetch the maximum number of events (API caps at 50)
 		$query_args = array(
 			'per_page'     => 50,
-			'starts_after' => 'yesterday'
+			'starts_after' => 'yesterday',
 		);
 
 		// Forward category/tag filters as comma-separated slugs (OR semantics).
@@ -525,14 +528,17 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 		$full_url = add_query_arg( $query_args, $api_url );
 
 		// Fetch data from API
-		$response = wp_remote_get( $full_url, array(
-			'timeout' => 8,
-			'headers' => array(
-				'User-Agent' => 'UCSC Events Block/1.0',
-				'Accept' => 'application/json'
-			),
-			'sslverify' => true
-		) );
+		$response = wp_remote_get(
+			$full_url,
+			array(
+				'timeout'   => 8,
+				'headers'   => array(
+					'User-Agent' => 'UCSC Events Block/1.0',
+					'Accept'     => 'application/json',
+				),
+				'sslverify' => true,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			// Log error for debugging
@@ -546,9 +552,9 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 			return array();
 		}
 
-		$body = wp_remote_retrieve_body( $response );
+		$body    = wp_remote_retrieve_body( $response );
 		$fetched = json_decode( $body, true );
-		$data = $fetched['events'];
+		$data    = $fetched['events'];
 
 		if ( ! is_array( $data ) ) {
 			error_log( 'UCSC Events API Error: Invalid JSON response' );
@@ -572,13 +578,13 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 			}
 
 			$events[] = array(
-				'title' => isset( $item['title'] ) ? $item['title'] : 'Untitled',
-				'organizer' => isset( $item['organizer']['organizer'] ) ? $item['organizer']['organizer'] : '',
-				'date' => isset( $item['start_date'] ) ? date_i18n( get_option( 'date_format' ), strtotime( $item['start_date'] ) ) : '',
-				'venue' => isset( $item['venue']['venue'] ) ? $item['venue']['venue'] : '',
+				'title'          => isset( $item['title'] ) ? $item['title'] : 'Untitled',
+				'organizer'      => isset( $item['organizer']['organizer'] ) ? $item['organizer']['organizer'] : '',
+				'date'           => isset( $item['start_date'] ) ? date_i18n( get_option( 'date_format' ), strtotime( $item['start_date'] ) ) : '',
+				'venue'          => isset( $item['venue']['venue'] ) ? $item['venue']['venue'] : '',
 				'featured_image' => $featured_image,
-				'link' => isset( $item['url'] ) ? $item['url'] : '',
-				'slug' => isset( $item['slug'] ) ? $item['slug'] : ''
+				'link'           => isset( $item['url'] ) ? $item['url'] : '',
+				'slug'           => isset( $item['slug'] ) ? $item['slug'] : '',
 			);
 		}
 
