@@ -148,11 +148,13 @@ if ( file_exists( $wp_tests_dir . '/includes/functions.php' ) ) {
 	}
 	if ( ! function_exists( 'wp_create_nonce' ) ) {
 		function wp_create_nonce( $action = '' ) {
-			return 'stub-nonce'; }
+			return 'stub-nonce';
+		}
 	}
 	if ( ! function_exists( 'admin_url' ) ) {
 		function admin_url( $path = '' ) {
-			return 'https://example.com/wp-admin/' . $path; }
+			return 'https://example.com/wp-admin/' . $path;
+		}
 	}
 	if ( ! function_exists( 'wp_parse_url' ) ) {
 		function wp_parse_url( $url, $component = -1 ) {
@@ -166,7 +168,8 @@ if ( file_exists( $wp_tests_dir . '/includes/functions.php' ) ) {
 	}
 	if ( ! function_exists( 'is_wp_error' ) ) {
 		function is_wp_error( $thing ) {
-			return false; }
+			return false;
+		}
 	}
 
 	// Load the Calendar Feed PHP code.

@@ -81,15 +81,6 @@ if ( ! empty( $api_url ) ) {
 	}
 }
 
-// Add nonce to global JS object.
-if ( ! wp_script_is( 'ucsc-events-frontend', 'done' ) ) {
-	wp_add_inline_script(
-		'wp-block-ucsc-events-view-script',
-		'window.ucscEventsNonce = ' . wp_json_encode( wp_create_nonce( 'ucsc_events_nonce' ) ) . ';',
-		'before'
-	);
-}
-
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() returns escaped attribute markup. ?>>
 	<?php if ( empty( $api_url ) || empty( $events ) ) : ?>
