@@ -25,6 +25,7 @@ if ( ! function_exists( 'ucsc_events_get_api_endpoints' ) ) {
 			array(
 				'events'     => 'https://events.ucsc.edu/wp-json/tribe/events/v1/events',
 				'organizers' => 'https://events.ucsc.edu/wp-json/tribe/events/v1/organizers',
+				'media'      => 'https://events.ucsc.edu/wp-json/wp/v2/media',
 			)
 		);
 	}
@@ -305,6 +306,54 @@ if ( ! function_exists( 'ucsc_events_remote_get_json' ) ) {
 }
 
 /**
+ * Batch-fetch alt text for a set of image attachment IDs from the source
+ * site's core media REST endpoint.
+ *
+ * The Tribe Events API's own `image` field carries no alt text (verified
+ * against the live feed: url, id, extension, width, height, filesize, sizes —
+ * no alt_text), but the attachment IDs it does return resolve on the standard
+ * `wp/v2/media` endpoint, which does expose the alt text set by editors. One
+ * batched request covers every image in a page of results.
+ *
+ * @param array  $image_ids      Attachment IDs to look up.
+ * @param string $media_endpoint Base wp/v2/media endpoint URL.
+ * @return array Map of attachment ID => sanitized alt text, only for IDs with non-empty alt text.
+ */
+if ( ! function_exists( 'ucsc_events_fetch_image_alt_text' ) ) {
+	function ucsc_events_fetch_image_alt_text( $image_ids, $media_endpoint ) {
+		$image_ids = array_values( array_unique( array_filter( array_map( 'absint', (array) $image_ids ) ) ) );
+
+		if ( empty( $image_ids ) ) {
+			return array();
+		}
+
+		$url = add_query_arg(
+			array(
+				'include'  => $image_ids,
+				'per_page' => min( count( $image_ids ), 100 ),
+				'_fields'  => 'id,alt_text',
+			),
+			$media_endpoint
+		);
+
+		$media = ucsc_events_remote_get_json( $url );
+
+		if ( is_wp_error( $media ) ) {
+			return array();
+		}
+
+		$alt_text_by_id = array();
+		foreach ( $media as $attachment ) {
+			if ( is_array( $attachment ) && isset( $attachment['id'], $attachment['alt_text'] ) && '' !== $attachment['alt_text'] ) {
+				$alt_text_by_id[ absint( $attachment['id'] ) ] = sanitize_text_field( $attachment['alt_text'] );
+			}
+		}
+
+		return $alt_text_by_id;
+	}
+}
+
+/**
  * AJAX: organizer autocomplete for the editor, proxied server-side.
  *
  * Like the preview, these lookups avoid a direct cross-origin fetch so they are
@@ -555,6 +604,17 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 			return array();
 		}
 
+		// Batch-fetch alt text for every image in this page of results up front,
+		// so the per-item loop below is a simple map lookup.
+		$image_ids = array();
+		foreach ( $data as $item ) {
+			if ( is_array( $item ) && isset( $item['image']['id'] ) ) {
+				$image_ids[] = $item['image']['id'];
+			}
+		}
+		$endpoints      = ucsc_events_get_api_endpoints();
+		$alt_text_by_id = ucsc_events_fetch_image_alt_text( $image_ids, $endpoints['media'] );
+
 		// Process and clean the data
 		$events = array();
 		foreach ( $data as $item ) {
@@ -571,12 +631,15 @@ if ( ! function_exists( 'ucsc_events_fetch_data' ) ) {
 				$featured_image = $item['image']['sizes']['medium']['url'];
 			}
 
+			$image_id = isset( $item['image']['id'] ) ? absint( $item['image']['id'] ) : 0;
+
 			$events[] = array(
 				'title' => isset( $item['title'] ) ? $item['title'] : 'Untitled',
 				'organizer' => isset( $item['organizer']['organizer'] ) ? $item['organizer']['organizer'] : '',
 				'date' => isset( $item['start_date'] ) ? date_i18n( get_option( 'date_format' ), strtotime( $item['start_date'] ) ) : '',
 				'venue' => isset( $item['venue']['venue'] ) ? $item['venue']['venue'] : '',
 				'featured_image' => $featured_image,
+				'featured_image_alt' => isset( $alt_text_by_id[ $image_id ] ) ? $alt_text_by_id[ $image_id ] : '',
 				'link' => isset( $item['url'] ) ? $item['url'] : '',
 				'slug' => isset( $item['slug'] ) ? $item['slug'] : ''
 			);

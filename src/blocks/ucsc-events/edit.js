@@ -396,9 +396,9 @@ export default function Edit( { attributes, setAttributes } ) {
 		<div key={index} className="ucsc-event-item">
 			{event.featured_image && (
 				<div className="ucsc-event-image">
-					<img 
-						src={event.featured_image} 
-						alt="" 
+					<img
+						src={event.featured_image}
+						alt={ event.featured_image_alt || '' }
 						onError={(e) => {
 							e.target.style.display = 'none';
 						}}

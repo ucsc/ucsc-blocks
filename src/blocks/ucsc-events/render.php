@@ -95,7 +95,7 @@ if (!wp_script_is('ucsc-events-frontend', 'done')) {
 						<div class="ucsc-event-image">
 							<img
 								src="<?php echo esc_url($event['featured_image']); ?>"
-								alt=""
+								alt="<?php echo esc_attr($event['featured_image_alt']); ?>"
 								loading="lazy"
 								onerror="this.style.display='none'" />
 						</div>
