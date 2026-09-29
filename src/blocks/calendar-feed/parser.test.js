@@ -146,9 +146,7 @@ describe( 'icsParse', () => {
 	// Past event is still parsed (filtering is a separate concern)
 	it( 'parses past events (filtering is done separately)', () => {
 		const past = events[ 8 ]; // evt-009
-		expect( past.summary ).toBe(
-			'Past Event — Should Be Filtered Out'
-		);
+		expect( past.summary ).toBe( 'Past Event — Should Be Filtered Out' );
 		expect( past.dtstart ).toBeGreaterThan( 0 );
 	} );
 
@@ -160,8 +158,7 @@ describe( 'icsParse', () => {
 	} );
 
 	it( 'returns an empty array for content with no VEVENTs', () => {
-		const noEvents =
-			'BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR';
+		const noEvents = 'BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR';
 		expect( icsParse( noEvents ) ).toEqual( [] );
 	} );
 } );
@@ -171,9 +168,9 @@ describe( 'icsParse', () => {
 // ─────────────────────────────────────────────────────────────────────
 describe( 'isLocationUrl', () => {
 	it( 'returns true for https URLs', () => {
-		expect(
-			isLocationUrl( 'https://ucsc.zoom.us/j/123?pwd=abc' )
-		).toBe( true );
+		expect( isLocationUrl( 'https://ucsc.zoom.us/j/123?pwd=abc' ) ).toBe(
+			true
+		);
 	} );
 
 	it( 'returns true for http URLs', () => {
@@ -195,9 +192,7 @@ describe( 'isLocationUrl', () => {
 describe( 'getHostFromUrl', () => {
 	it( 'extracts hostname from a Zoom URL', () => {
 		expect(
-			getHostFromUrl(
-				'https://ucsc.zoom.us/j/98765432100?pwd=xYz'
-			)
+			getHostFromUrl( 'https://ucsc.zoom.us/j/98765432100?pwd=xYz' )
 		).toBe( 'ucsc.zoom.us' );
 	} );
 

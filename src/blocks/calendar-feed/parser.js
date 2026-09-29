@@ -5,7 +5,7 @@
  * preview can parse an ICS feed client-side when needed, and so the
  * logic can be tested with Jest.
  *
- * @package UcscBlocks
+ * @package
  */
 
 /**
@@ -27,11 +27,7 @@ export function icsParseDateTime( dt ) {
 		const y = dt.slice( 0, 4 );
 		const m = dt.slice( 4, 6 );
 		const d = dt.slice( 6, 8 );
-		const ts = Date.UTC(
-			Number( y ),
-			Number( m ) - 1,
-			Number( d )
-		);
+		const ts = Date.UTC( Number( y ), Number( m ) - 1, Number( d ) );
 		return ts / 1000;
 	}
 
