@@ -18,6 +18,7 @@
 		"test:watch": "wp-scripts test-unit-js --watch"
 	},
 	"devDependencies": {
+		"@ucsantacruz/wordpress-version-updater": "^1.1.1",
 		"@wordpress/scripts": "^30.15.0",
 		"typescript": "^5.9.2"
 	},
@@ -41,7 +42,7 @@
 			},
 			{
 				"filename": "ucsc-blocks.php",
-				"updater": "wp-plugin-version-updater.js"
+				"updater": "node_modules/@ucsantacruz/wordpress-version-updater/index.js"
 			}
 		]
 	}
