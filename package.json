@@ -30,7 +30,7 @@
 		"CHANGELOG.md",
 		"LICENSE"
 	],
-	"standard-version": {
+	"commit-and-tag-version": {
 		"bumpFiles": [
 			{
 				"filename": "package-lock.json",
