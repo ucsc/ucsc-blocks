@@ -14,6 +14,7 @@
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"release": "npx commit-and-tag-version",
+		"dryrun": "npx commit-and-tag-version --dry-run",
 		"test": "wp-scripts test-unit-js",
 		"test:watch": "wp-scripts test-unit-js --watch"
 	},
@@ -33,16 +34,16 @@
 	"commit-and-tag-version": {
 		"bumpFiles": [
 			{
+				"filename": "ucsc-blocks.php",
+				"updater": "wordpress-version-updater.js"
+			},
+			{
 				"filename": "package-lock.json",
 				"type": "json"
 			},
 			{
 				"filename": "package.json",
 				"type": "json"
-			},
-			{
-				"filename": "ucsc-blocks.php",
-				"updater": "node_modules/@ucsantacruz/wordpress-version-updater/index.js"
 			}
 		]
 	}
