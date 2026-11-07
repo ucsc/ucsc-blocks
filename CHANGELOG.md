@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [2026.11.1](https://github.com/ucsc/ucsc-blocks/compare/v3.0.0...v2026.11.1) (2026-11-07)
+
+### Bug Fixes
+
+* 🐛 Bring PHP sources up to WordPress coding standards ([#18](https://github.com/ucsc/ucsc-blocks/issues/18)) ([65c9c9d](https://github.com/ucsc/ucsc-blocks/commit/65c9c9d5fec22da6e10689907838bb8701c346ca))
+* 🐛 Pin typescript to ^5 so eslint can load [@typescript-eslint](https://github.com/typescript-eslint) ([#18](https://github.com/ucsc/ucsc-blocks/issues/18)) ([395b493](https://github.com/ucsc/ucsc-blocks/commit/395b49302165844266cb5e78e03fbfa2ad75b14c))
+* 🐛 Remove duplicate nonce script and widen version regex ([#18](https://github.com/ucsc/ucsc-blocks/issues/18)) ([f9d272f](https://github.com/ucsc/ucsc-blocks/commit/f9d272f494081e1846d75f8167165980bc40862c))
+* 🐛 Resolve remaining eslint errors and revive dead ucsc-events view script ([#18](https://github.com/ucsc/ucsc-blocks/issues/18)) ([ca2ae7a](https://github.com/ucsc/ucsc-blocks/commit/ca2ae7aa32b60c52a40125297ce50991a94b9ebe))
+
 ## [3.0.0](https://github.com/ucsc/ucsc-blocks/compare/v2.0.0...v3.0.0) (2026-07-21)
 
 
