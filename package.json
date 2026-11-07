@@ -14,10 +14,12 @@
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"release": "npx commit-and-tag-version",
+		"release:dryrun": "npx commit-and-tag-version --dry-run",
 		"test": "wp-scripts test-unit-js",
 		"test:watch": "wp-scripts test-unit-js --watch"
 	},
 	"devDependencies": {
+		"@ucsantacruz/wordpress-version-updater": "^2.0.0",
 		"@wordpress/scripts": "^30.15.0",
 		"typescript": "^5.9.2"
 	},
@@ -29,8 +31,15 @@
 		"CHANGELOG.md",
 		"LICENSE"
 	],
-	"standard-version": {
+	"commit-and-tag-version": {
+		"scripts": {
+			"prerelease": "wordpress-version-updater check ucsc-blocks.php"
+		},
 		"bumpFiles": [
+			{
+				"filename": "ucsc-blocks.php",
+				"updater": "node_modules/@ucsantacruz/wordpress-version-updater/index.js"
+			},
 			{
 				"filename": "package-lock.json",
 				"type": "json"
@@ -38,10 +47,6 @@
 			{
 				"filename": "package.json",
 				"type": "json"
-			},
-			{
-				"filename": "ucsc-blocks.php",
-				"updater": "wp-plugin-version-updater.js"
 			}
 		]
 	}

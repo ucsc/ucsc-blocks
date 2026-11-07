@@ -60,12 +60,12 @@ Conventional Commits with emoji prefixes:
 - `feat: ✨ Description` — new feature
 - `fix: 🐛 Description` — bug fix
 - `refactor: ✏️ Description` — code restructuring
-- `chore(release): X.Y.Z` — release commits (automated by standard-version)
+- `chore(release): X.Y.Z` — release commits (automated by commit-and-tag-version)
 - Reference issues/PRs with `(#N)`
 
 ## Versioning
 
-Uses `standard-version`. Version is tracked in three places (automatically bumped):
+Uses `commit-and-tag-version`. Version is tracked in three places (automatically bumped):
 
 - `package.json`
 - `package-lock.json`

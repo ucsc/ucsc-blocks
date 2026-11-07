@@ -7,33 +7,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 1. Block: ICS Calendar
-
-**Branch:** `2026-03-block-ics-calendar`
-**Status:** Not started
-
-**Goal:** New block that fetches and displays events from an ICS/iCal feed URL (`.ics`). Many campus departments publish ICS feeds from Google Calendar, Outlook, or other systems. This block lets editors paste a feed URL and display upcoming events.
-
-**Scope:**
-
-- Block attributes: `feedUrl`, `itemCount` (default 5), `layoutStyle` (list/grid)
-- Server-side PHP: fetch ICS feed, parse into events, cache with transients (15 min)
-- Use a lightweight ICS parser (PHP library or custom parser for VEVENT)
-- Server-side render (like ucsc-events)
-- Editor: URL input, count slider, layout picker, preview, cache clear button
-- Frontend: event list with date, title, location, description
-
-**Acceptance:**
-
-- Editor can paste an ICS URL, see a preview, and choose layout
-- Frontend renders upcoming events sorted by start date
-- Results are cached; cache can be cleared from the editor
-
-**Notes:** Follow the ucsc-events block as a reference pattern. Register in `ucsc-blocks.php`.
-
----
-
-## 2. Block: ucsc-events — Card Image Fallback
+## 1. Block: ucsc-events — Card Image Fallback
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -52,7 +26,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 3. Block: ucsc-events — Date Range Filter
+## 2. Block: ucsc-events — Date Range Filter
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -72,7 +46,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 4. Block: ucsc-events — Category/Tag Filtering
+## 3. Block: ucsc-events — Category/Tag Filtering
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -92,7 +66,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 5. Block: News/Announcements
+## 4. Block: News/Announcements
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -115,18 +89,18 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 6. Shared: Extract Common Fetch/Cache Utilities
+## 5. Shared: Extract Common Fetch/Cache Utilities
 
 **Branch:** create from `main`
 **Status:** Not started
-**Depends on:** At least 2 blocks using fetch/cache (ucsc-events + one more)
+**Depends on:** At least 2 blocks using fetch/cache — met by ucsc-events and calendar-feed
 
 **Goal:** Once multiple blocks share the same fetch-and-cache pattern, extract shared PHP utilities to reduce duplication.
 
 **Scope:**
 - Create `src/includes/` or `src/shared/` directory for shared PHP
 - Extract: transient caching wrapper, HTTP fetch with error handling, cache-clear AJAX handler
-- Refactor ucsc-events and other blocks to use shared functions
+- Refactor ucsc-events and calendar-feed to use shared functions
 - Update `ucsc-blocks.php` to include shared files
 
 **Acceptance:**
@@ -136,7 +110,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 7. Block: People/Directory
+## 6. Block: People/Directory
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -157,7 +131,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 8. Block: Social Media Links
+## 7. Block: Social Media Links
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -179,7 +153,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 9. Block: Alert/Notice Banner
+## 8. Block: Alert/Notice Banner
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -200,7 +174,7 @@ Items are ordered by suggested priority. Dependencies are noted where they exist
 
 ---
 
-## 10. Enhancement: Dark Mode / High Contrast Support
+## 9. Enhancement: Dark Mode / High Contrast Support
 
 **Branch:** create from `main`
 **Status:** Not started
@@ -234,6 +208,15 @@ These need more research or discussion before becoming roadmap items:
 ---
 
 ## Done
+
+- **Block: ICS Calendar** — Shipped as `calendar-feed` (`ucsc/calendar-feed`)
+  in #10. Editors paste an ICS/iCal feed URL and choose an item count and a
+  list or grid layout. The server parses VEVENT data, caches results in a
+  transient for 30 minutes, and validates the feed URL against SSRF. The
+  editor shows a preview and has a cache-clear button.
+
+- **Tooling: Lint Gating** — eslint, stylelint and PHPCS (`WordPress-Extra` +
+  `WordPress-Docs`) all run clean and are gated in CI on pull requests (#18).
 
 - **Testing: PHP Unit Tests** — PHPUnit for server-side fetch/cache functions.
   Covers the calendar-feed ICS parser, datetime parsing, description HTML
